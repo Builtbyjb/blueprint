@@ -1,0 +1,59 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="{% static 'main/style.css' %}" rel="stylesheet">
+    <script src="https://kit.fontawesome.com/a1ada430a2.js" crossorigin="anonymous"></script>
+    <title>{% block title %}{% endblock %}</title>
+</head>
+
+<body>
+    <nav class="navbar navbar-expand-lg bg-dark w-100" data-bs-theme="dark">
+        <div class="container-fluid w-100">
+            <a class="navbar-brand" id="brand-name" href="{% url 'index' %}">Blueprint</a>
+            <button class="navbar-toggler" type=" button" data-bs-toggle="collapse" data-bs-target="#navbarNavDropdown"
+                aria-controls="navbarNavDropdown" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon text-white"></span>
+            </button>
+            <div class="collapse navbar-collapse w-100" id="navbarNavDropdown">
+                <ul class="navbar-nav w-100">
+                    {% if user.is_authenticated %}
+                    <li class="nav-item">
+                        <a class="nav-link text-white" id="profile-link"><i class="fa-regular fa-user me-2"></i>{{
+                            user.username }}</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" id="project-link" href="{% url 'index' %}">Project</a>
+                    </li>
+                    <li class="nav-item ms-auto">
+                        <a class="nav-link" href="{% url 'logout' %}">
+                            Logout
+                        </a>
+                    </li>
+                    {% else %}
+                    <li class="nav-item">
+                        <a class="nav-link" id="register-link" href="{% url 'register' %}">Register</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" id="login-link" href="{% url 'login' %}">Login</a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+    <br>
+    <div class="body container-md">
+        {% block body %}
+        {% endblock %}
+    </div>
+    {% block script %}
+    {% endblock %}
+</body>
+
+</html>

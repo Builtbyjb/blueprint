@@ -1,0 +1,112 @@
+{% extends "main/layout.html" %}
+
+{% block body %}
+<div class="">
+    <div class="project-create">
+        <div>
+            <button class="btn btn-primary" id="create-project-btn">
+                <i class="fa-solid fa-plus"></i>
+                Create Project
+            </button>
+        </div>
+        <form class="d-flex mb-3" role="search">
+            <input id="search-project-name-input" class="form-control me-2" type="search"
+                placeholder="Enter Project Name">
+            <button class="btn btn-primary" type="button">
+                <i class="fa-solid fa-magnifying-glass"></i>
+            </button>
+        </form>
+    </div>
+    <br>
+    <!-- Create project pop up -->
+    <div id="create-project-main-div" class="hide-pop-up pop-up-background">
+        <div id="create-project-div" class="pop-up-view shadow">
+            <div>
+                <h6>Create Project</h6>
+            </div>
+            <hr>
+            <div class="w-100">
+                <form id="create-project-form">
+                    <div class="mb-3">
+                        <label for="project-name-create" class="form-label">Project Name</label>
+                        <input type="text" class="form-control clear-field" id="project-name-create" name="project-name"
+                            maxlength="50" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="project-description-create" class="form-label">
+                            Project Description
+                        </label>
+                        <textarea class="form-control clear-field" id="project-description-create"
+                            name="project-description" rows="3" maxlength="200" required></textarea>
+                    </div>
+                    <div class="mt-3 d-flex justify-content-between">
+                        <div>
+                            <button type="button" id="close-project-pop-up" class="btn btn-primary me-3">
+                                <i class="fa-solid fa-xmark"></i>
+                                Cancel
+                            </button>
+                            <input type="submit" class="btn btn-primary" value="Create project">
+                        </div>
+                        <div>
+                            <span id="pro-des-count">0</span>
+                            <span>/200</span>
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+        </div>
+    </div>
+    <div class="w-25">
+        <select id="filter-project" class="form-select">
+            <option {% if filter=="all" %} selected {% endif %} value="all">
+                All
+            </option>
+            <option {% if filter=="completed" %} selected {% endif %} value="completed">
+                Completed
+            </option>
+            <option {% if filter=="uncompleted" %} selected {% endif %} value="uncompleted">
+                Uncompleted
+            </option>
+            <option {% if filter=="created" %} selected {% endif %} value="created">
+                Created
+            </option>
+            <option {% if filter=="joined" %} selected {% endif %} value="joined">
+                Joined
+            </option>
+        </select>
+    </div>
+    <br>
+    <div class="cards">
+        {% for project in projects %}
+        <div id="project-{{ project.id }}" data-filter class="delete-item shadow" data-projectid="{{ project.id }}">
+            <a class="text-decoration-none text-black" href="/project/{{ project.id }}">
+                <div>
+                    <h6 id="project-name-{{project.id}}" class="mb-3">{{ project.name }}</h6>
+                    <p> Team leader: {{ project.team_leader }}</p>
+                </div>
+                <div class="d-flex align-items-center">
+                    {% if project.is_completed %}
+                    <p class="text-success me-4"><i class="fa-solid fa-check"></i></p>
+                    {% endif %}
+                    {% if project.creator == user.username %}
+                    <p class="text-info me-4"><i class="fa-solid fa-user"></i></p>
+                    {% else %}
+                    <p class="me-2">Joined</p>
+                    {% endif %}
+                    {% if project.creator == user.username %}
+                    <button id="delete-project" class="btn btn-danger btn-sm" data-id="{{ project.id }}">
+                        <i class="fa-solid fa-trash-can"></i>
+                    </button>
+                    {% endif %}
+                </div>
+            </a>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
+
+{% block script %}
+<script type="module" src="{% static 'main/scripts/index.js' %}"></script>
+{% endblock %}

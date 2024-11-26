@@ -1,0 +1,370 @@
+{% extends "main/layout.html" %}
+
+
+{% block body %}
+<div class="project-name-div mb-2">
+    <div class="d-flex mt-3">
+        <h6 id="project-name" class="me-3 mb-0" data-id="{{ project.id }}" data-currentuser="{{user.username}}"
+            data-projectcreator="{{project.creator}}" data-projectleader="{{project.team_leader}}">{{ project.name }}
+        </h6>
+        {% if project.creator == user.username %}
+        <button id="edit-project-name" class="btn btn-outline-dark btn-sm" data-id="{{ project.id }}">
+            <i class="fa-solid fa-pen-to-square"></i>
+        </button>
+        {% endif %}
+    </div>
+    <!-- Delete project button -->
+    {% if project.creator == user.username %}
+    <div class="ms-auto">
+        <button id="delete-project-exp" class="btn btn-danger btn-sm" data-id="{{ project.id }}">
+            <i class="fa-solid fa-trash-can"></i>
+        </button>
+    </div>
+    {% endif %}
+</div>
+<div class="project-description-div mb-2">
+    <p id="project-description" class="me-3">{{ project.description }}</p>
+    {% if project.creator == user.username %}
+    <button id="edit-project-des" class="btn btn-outline-dark btn-sm" data-id="{{ project.id }}">
+        <i class="fa-solid fa-pen-to-square"></i>
+    </button>
+    {% endif %}
+</div>
+<hr>
+<div class="team-div">
+    <!-- Filter -->
+    <div class="me-3 d-flex">
+        <!-- Filter team member -->
+        <div class="me-4 w-50">
+            <label for="team-filter">Filter by member</label>
+            <select id="team-filter" class="form-select">
+                <option selected>{{ team_select }}</option>
+                {% for team in teams %}
+                {% if team.member != team_select %}
+                <option value="{{ team.member }}" data-remove="{{ team.id }}">
+                    {{ team.member }}
+                </option>
+                {% endif %}
+                {% endfor %}
+                {% if team_select != "All" %}
+                <option value="All"> All</option>
+                {% endif %}
+            </select>
+        </div>
+        <!-- Filter tasks -->
+        <div class="w-50">
+            <label for="task-filter">Filter by task stage</label>
+            <select id="task-filter" class="form-select">
+                <option value="all" {% if task_select=="all" %} selected {% endif %}>
+                    All
+                </option>
+                <option value="to-do" {% if task_select=="to-do" %} selected {% endif %}>
+                    To-DO
+                </option>
+                <option value="in-progress" {% if task_select=="in-progress" %} selected {% endif %}>
+                    In Progress
+                </option>
+                <option value="completed" {% if task_select=="completed" %} selected {% endif %}>
+                    Completed
+                </option>
+            </select>
+        </div>
+    </div>
+    <hr>
+    <!-- Display team members -->
+    <div class="d-flex">
+        <div class="mt-3 me-4">
+            <div class="dropdown">
+                <button class="btn btn-outline-dark btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown"
+                    aria-expanded="false">
+                    Team Members
+                </button>
+                <ul id="team-member-display" class="dropdown-menu border border-dark">
+                    {% for team in teams %}
+                    <li class="m-2 shadow p-3" data-remove="{{team.id}}">
+                        <p id="member-username-{{ team.id }}" data-teamid="{{team.id}}">{{ team.member }}</p>
+                        <div class="d-flex align-items-center justify-content-between">
+                            <p id="team-member-{{ team.member }}">{{ team.role }}</p>
+                            <div class="d-flex">
+                                {% if project.creator == user.username %}
+                                {% if team.role != "Admin" %}
+                                <button class="btn btn-outline-dark btn-sm me-3" id="team-role-edit"
+                                    data-remove="{{team.id}}" data-teamid="{{ team.id }}"
+                                    data-teamrole="{{ team.role }}" data-teammember="{{ team.member }}">
+                                    <i id="team-role-edit" data-remove="{{team.id}}" data-teamid="{{ team.id }}"
+                                        data-teamrole="{{ team.role }}" data-teammember="{{ team.member }}"
+                                        class="fa-solid fa-pen-to-square"></i>
+                                </button>
+                                {% endif %}
+                                {% endif %}
+                                {% if team.role != "Admin" %}
+                                {% if project.team_leader == user.username or project.creator == user.username %}
+                                <button id="team-member-delete" data-teamid="{{ team.id }}"
+                                    class="btn btn-danger btn-sm">
+                                    <i id="team-member-delete" data-teamid="{{ team.id }}"
+                                        class="fa-solid fa-trash-can"></i>
+                                </button>
+                                {% endif %}
+                                {% if team.role == "Team member" and team.member == user.username %}
+                                <button id="team-member-delete" data-teamid="{{ team.id }}"
+                                    class="btn btn-danger btn-sm">
+                                    <i id="team-member-delete" data-teamid="{{ team.id }}"
+                                        class="fa-solid fa-trash-can"></i>
+                                </button>
+                                {% endif %}
+                                {% endif %}
+                            </div>
+                        </div>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+        <div class="mt-3">
+            {% if project.creator == user.username or project.team_leader == user.username %}
+            <button id="team-member-btn" class="btn btn-outline-dark btn-sm">
+                <i class=" fa-solid fa-user-plus"></i>
+                Add Team Member
+            </button>
+            {% endif %}
+        </div>
+    </div>
+</div>
+<br>
+<div class="d-flex justify-content-between">
+    <div class="d-flex">
+        <h4 class="me-5">Tasks</h4>
+        <button id="add-task-btn" class="btn btn-outline-dark btn-sm">
+            <i class="fa-solid fa-plus"></i>
+            Add Task
+        </button>
+    </div>
+    {% if project.creator == user.username or project.team_leader == user.username %}
+    <div class="form-check">
+        <label class="form-check-label" for="project-completed">
+            Completed
+        </label>
+        <input class="form-check-input" type="checkbox" {% if project.is_completed %} checked {% endif %}
+            data-projectid="{{ project.id }}" id="project-completed">
+    </div>
+    {% endif %}
+</div>
+<!-- Display tasks -->
+<div id="tasks-div" class="cards mt-3 mb-5">
+    {% for task in tasks %}
+    <div id="task-{{ task.id }}" data-id="{{ task.id }}" class="delete-item shadow">
+        <div class="mb-4">
+            <p id="task-text-{{ task.id }}" class="lh-sm">{{ task.task }}</p>
+        </div>
+        <div>
+            <div class="mb-3">
+                {% if project.creator == user.username or project.team_leader == user.username %}
+                <select id="assign-team-member" class="form-select" data-id="{{ task.id }}">
+                    <option selected data-assign>
+                        {{ task.assigned_to }}
+                    </option>
+                    {% for team in teams %}
+                    {% if task.assigned_to != team.member %}
+                    <option value="{{ team.member }}" data-remove="{{ team.id }}">
+                        {{ team.member }}
+                    </option>
+                    {% endif %}
+                    {% endfor%}
+                    {% if task.assigned_to != "unassigned" %}
+                    <option value="unassigned">unassigned</option>
+                    {% endif %}
+                </select>
+                {% else %}
+                <p>{{ task.assigned_to }}</p>
+                {% endif %}
+            </div>
+            <select id="task-stage-change" class="form-select mb-3" data-taskid="{{ task.id }}">
+                <option {% if task.stage=="to-do" %} selected {% endif %} value="to-do">
+                    To-Do
+                </option>
+                <option {% if task.stage=="in-progress" %} selected {% endif %} value="in-progress">
+                    In Progress
+                </option>
+                <option {% if task.stage=="completed" %} selected {% endif %} value="completed">
+                    Completed
+                </option>
+            </select>
+            <div class="d-flex align-items-center">
+                <button id="view-comment" data-taskid="{{ task.id }}"
+                    class="comment-view btn btn-outline-dark btn-sm position-relative me-3">
+                    <i id="view-comment" data-taskid="{{ task.id }}" class="fa-solid fa-comment"></i>
+                    <span id="task-comment-count-{{ task.id }}" class="position-absolute 
+                                top-0 start-100 
+                                translate-middle 
+                                badge rounded-pill 
+                                bg-primary">
+                        {{ task.comment_count }}
+                        <span class="visually-hidden">number of comments</span>
+                    </span>
+                </button>
+                </button>
+                <button id="edit-task" class="btn btn-outline-dark btn-sm me-3" data-taskid="{{ task.id }}">
+                    <i id="edit-task" data-taskid="{{ task.id }}" class="fa-solid fa-pen-to-square"></i>
+                </button>
+                {% if project.creator == user.username or project.team_leader == user.username %}
+                <button id="delete-task" class="btn btn-danger btn-sm" data-taskid="{{ task.id }}">
+                    <i id="delete-task" data-taskid="{{ task.id }}" class="fa-solid fa-trash-can"></i>
+                </button>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+</div>
+<!-- Edit project name pop up -->
+<div id="edit-project-name-main-div" class="hide-pop-up pop-up-background">
+    <div id="edit-project-name-div" class="pop-up-view shadow">
+        <h6>Edit Project Name</h6>
+        <hr>
+        <form id="edit-project-name-form">
+            <div class="mb-3">
+                <input class="form-control clear-field" type="input" maxlength="50" id="name-text" name="name-text"
+                    required>
+            </div>
+            <div class="mt-4 d-flex justify-content-between">
+                <div>
+                    <button type="button" id="close-project-name-pop-up" class="btn btn-primary me-4 btn-sm">
+                        <i class="fa-solid fa-xmark"></i>
+                        Close
+                    </button>
+                    <input type="submit" value="Save Name" class="btn btn-primary btn-sm">
+                </div>
+                <div>
+                    <span id="name-text-count">0</span>
+                    <span>/50</span>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+<!-- Edit project project description pop up -->
+<div id="edit-project-des-main-div" class="hide-pop-up pop-up-background">
+    <div id="edit-project-des-div" class="pop-up-view shadow">
+        <h6>Edit Project Description</h6>
+        <hr>
+        <form id="edit-project-des-form">
+            <div class="mb-3">
+                <textarea class="clear-field form-control" id="description-text" name="description-text" rows="4"
+                    maxlength="200" required></textarea>
+            </div>
+            <div class="mt-4 d-flex justify-content-between">
+                <div>
+                    <button id="close-project-des-pop-up" class="btn btn-primary me-3 btn-sm">
+                        <i class="fa-solid fa-xmark"></i>
+                        Close
+                    </button>
+                    <input type="submit" value="Save Description" class="btn btn-primary btn-sm">
+                </div>
+                <div>
+                    <span id="description-text-count">0</span>
+                    <span>/200</span>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+<!-- Add task pop up -->
+<div id="add-task-main-div" class="hide-pop-up pop-up-background">
+    <div id="add-task-div" class="pop-up-view shadow">
+        <h6 id="add-task-display-title">Add Task</h6>
+        <hr>
+        <form id="add-task-form">
+            <div class="mb-3">
+                <textarea class="form-control clear-field" autofocus id="task-text" name="task-text" rows="4"
+                    maxlength="200" required></textarea>
+                <input type="hidden" id="project-id" name="project-id" value="{{ project.id }}">
+            </div>
+            <div class="mt-3 d-flex justify-content-between">
+                <div>
+                    <button type="button" id="close-task-pop-up" class="btn btn-primary btn-sm me-4">
+                        <i class="fa-solid fa-xmark"></i>
+                        Close
+                    </button>
+                    <input id="add-task-input" type="submit" class="btn btn-primary btn-sm" value="Add Task">
+                </div>
+                <div>
+                    <span id="task-text-count">0</span>
+                    <span>/200</span>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+<!-- Add team member pop up -->
+<div id="team-member-main-div" class="hide-pop-up pop-up-background">
+    <div id="team-member-div" class="pop-up-view shadow">
+        <h6 id="add-team-member-header">Add Team Member</h6>
+        <hr>
+        <form>
+            <div class="mb-3">
+                <label for="team-member-username">
+                    Team Member Username
+                </label>
+                <input type="text" class="form-control clear-field" id="team-member-username" required>
+            </div>
+            <div class="mb-3">
+                <label for="role-select" class="md-font mb-1">Role</label>
+                <select id="role-select" class="form-select" aria-label="Default select example">
+                    <option value="Team leader">Team leader</option>
+                    <option selected value="Team member">Team member</option>
+                </select>
+            </div>
+            <div>
+                <button type="button" id="close-team-add-pop-up" class="btn btn-primary btn-sm me-4">
+                    <i class="fa-solid fa-xmark"></i>
+                    Close
+                </button>
+                <input id="add-team-member" type="submit" class="btn btn-primary btn-sm" data-id="{{ project.id }}"
+                    value="Add">
+            </div>
+        </form>
+    </div>
+</div>
+<!-- Comment pop up -->
+<div id="comment-view-main-div" class="hide-pop-up pop-up-background">
+    <div id="comment-view-div" class="pop-up-view shadow">
+        <div class="d-flex align-items-center mb-0">
+        </div>
+        <br>
+        <div>
+            <p id="comment-task-display" class="md-font"></p>
+            <h6>Comments <span id="comment-div-count" class="badge text-bg-primary">0</span></h6>
+            <form id="add-comment-form" class="mb-3">
+                <div class="mb-2">
+                    <textarea class="clear-field form-control" id="comment-text" name="comment-text" rows="4"
+                        maxlength="200" required></textarea>
+                    <input type="hidden" id="task-id" name="task-id" value="">
+                </div>
+                <div class="mt-3 d-flex justify-content-between">
+                    <div>
+                        <button type="button" class="btn btn-primary btn-sm me-4" id="close-comment-pop-up">
+                            <i class="fa-solid fa-xmark"></i>
+                            Close
+                        </button>
+                        <input id="comment-submit" type="submit" data-taskid="" class="btn btn-primary btn-sm"
+                            value="comment">
+                    </div>
+                    <div>
+                        <span id="comment-text-count">0</span>
+                        <span>/200</span>
+                    </div>
+                </div>
+            </form>
+            <div id="comments-display-div" class="p-2 mb-2">
+                <!-- Display comments -->
+            </div>
+        </div>
+    </div>
+</div>
+</div>
+{% endblock %}
+
+{% block script %}
+<script type="module" src="{% static 'main/scripts/project.js' %}"></script>
+{% endblock %}

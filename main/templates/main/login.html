@@ -1,0 +1,33 @@
+{% extends "main/layout.html" %}
+
+{% block title %} Login {% endblock %}
+
+{% block body %}
+<h1>Login</h1>
+<hr />
+{% if msg %}
+<p class="alert alert-danger">{{ msg }}</p>
+{% endif %}
+
+<div class="d-flex justify-content-center align-items-center">
+    <form action="{% url 'login' %}" method="POST" class="form-width">
+        {% csrf_token %}
+        <div class="mb-3">
+            <label for="username" class="form-label">Username</label>
+            <input type="text" class="form-control mb-3" id="username" name="username" maxlength="30" required />
+        </div>
+        <div class="mb-3">
+            <label for="password" class="form-label">Password</label>
+            <input type="password" class="form-control mb-3" id="password" name="password" required />
+        </div>
+        <div class="d-grid gap-2">
+            <input type="submit" class="btn btn-primary" value="Login" />
+        </div>
+    </form>
+</div>
+
+{% endblock %}
+
+{% block script %}
+<script type="module" src="../../static/main/scripts/login.js"></script>
+{% endblock %}
