@@ -3,39 +3,54 @@
 {% block title %} Register {% endblock %}
 
 {% block body %}
-<h1>Register</h1>
-<hr />
+
 {% if msg %}
 <p>{{ msg }}</p>
 {% endif %}
-<div class="d-flex justify-content-center align-items-center">
-    <form action="{% url 'register' %}" method="POST" class="form-width">
-        {% csrf_token %}
-        <div class="mb-3">
-            <label for="email" class="form-label">Email</label>
-            <input type="text" class="form-control mb-3" id="email" name="email" required />
-        </div>
-        <div class="mb-3">
-            <label for="username" class="form-label">Username</label>
-            <input type="text" class="form-control mb-3" id="username" name="username" maxlength="30" required />
-        </div>
-        <div class="mb-3">
-            <label for="password" class="form-label">Password</label>
-            <input type="password" class="form-control mb-3" id="passwordReg" name="password" required />
-        </div>
-        <div class="mb-3">
-            <label for="confirmation" class="form-label">Confirm Password</label>
-            <input type="password" class="form-control mb-3" id="confirmation" name="confirmation" required />
-        </div>
-        <p id="regMsg" role="alert"></p>
-        <div class="d-grid gap-2">
-            <input type="submit" class="btn btn-primary" value="Register" />
-        </div>
-    </form>
+
+<div class="flex-grow flex items-center justify-center p-4">
+    <div class="bg-dark-100 p-8 rounded-lg shadow-lg w-full max-w-md">
+        <h2 class="text-2xl font-bold mb-6 text-center">Register</h2>
+        <form action="{% url 'register' %}" method="POST">
+            {% csrf_token %}
+            <div class="mb-4">
+                <label for="email" class="block mb-2 text-sm font-medium">Email</label>
+                <input type="email" id="email" name="email" required
+                    class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="Enter your email">
+            </div>
+            <div class="mb-4">
+                <label for="username" class="block mb-2 text-sm font-medium">Username</label>
+                <input type="text" id="username" name="username" required maxlength="30"
+                    class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="Choose a username">
+            </div>
+            <div class="mb-4">
+                <label for="password" class="block mb-2 text-sm font-medium">Password</label>
+                <input type="password" id="password" name="password" required
+                    class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="Enter your password">
+            </div>
+            <div class="mb-4">
+                <label for="confirm-password" class="block mb-2 text-sm font-medium">Confirm Password</label>
+                <input type="password" id="confirm-password" name="confirm-password" required
+                    class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="Confirm your password">
+            </div>
+            <div id="alert" class="p-2 rounded-md w-100 mb-6">
+                <p id="alert-text" class="text-white font-medium"></p>
+            </div>
+            <input type="submit" value="Register"
+                class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline transition-colors">
+        </form>
+        <p class="mt-4 text-center text-sm">
+            Already have an account? <a href="{% url 'login' %}" class="text-blue-500 hover:underline">Login here</a>
+        </p>
+    </div>
 </div>
 
 {% endblock %}
 
 {% block script %}
-<script type="module" src="{% static 'main/script/register.js' %}"></script>
+<script type="module" src="../../static/main/scripts/register.js"></script>
 {% endblock %}

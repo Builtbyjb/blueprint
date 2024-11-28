@@ -8,42 +8,40 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link href="{% static 'main/style.css' %}" rel="stylesheet">
+    <link rel="icon"
+        href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%230284c7'/><path d='M30 40 L30 70 L45 70 L45 55 L55 55 L55 70 L70 70 L70 40 L50 25 Z' fill='white'/></svg>" />
     <script src="https://kit.fontawesome.com/a1ada430a2.js" crossorigin="anonymous"></script>
     <title>{% block title %}{% endblock %}</title>
 </head>
 
-<body>
-    <nav class="navbar navbar-expand-lg bg-dark w-100" data-bs-theme="dark">
-        <div class="container-fluid w-100">
-            <a class="navbar-brand" id="brand-name" href="{% url 'index' %}">Blueprint</a>
-            <button class="navbar-toggler" type=" button" data-bs-toggle="collapse" data-bs-target="#navbarNavDropdown"
-                aria-controls="navbarNavDropdown" aria-expanded="false" aria-label="Toggle navigation">
-                <span class="navbar-toggler-icon text-white"></span>
-            </button>
-            <div class="collapse navbar-collapse w-100" id="navbarNavDropdown">
-                <ul class="navbar-nav w-100">
-                    {% if user.is_authenticated %}
-                    <li class="nav-item">
-                        <a class="nav-link text-white" id="profile-link"><i class="fa-regular fa-user me-2"></i>{{
-                            user.username }}</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" id="project-link" href="{% url 'index' %}">Project</a>
-                    </li>
-                    <li class="nav-item ms-auto">
-                        <a class="nav-link" href="{% url 'logout' %}">
-                            Logout
-                        </a>
-                    </li>
-                    {% else %}
-                    <li class="nav-item">
-                        <a class="nav-link" id="register-link" href="{% url 'register' %}">Register</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" id="login-link" href="{% url 'login' %}">Login</a>
-                    </li>
-                    {% endif %}
-                </ul>
+<body class="bg-dark-200 text-gray-100 min-h-screen flex flex-col">
+    <nav class="bg-dark-100 p-4">
+        <div class="container mx-auto flex flex-wrap justify-between items-center">
+            <div class="flex items-center w-full md:w-auto justify-between">
+                <a class="text-xl font-bold" href="{% url 'index' %}">Blueprint</a>
+                <button id="menu-toggle" class="md:hidden text-gray-300 hover:text-white focus:outline-none">
+                    <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M4 6h16M4 12h16M4 18h16" />
+                    </svg>
+                </button>
+            </div>
+            <div id="menu"
+                class="hidden md:flex flex-col md:flex-row items-center w-full md:w-auto mt-4 md:mt-0 space-y-2 md:space-y-0 md:space-x-4">
+                {% if user.is_authenticated %}
+                <a id="profile-link">
+                    <i class="fa-regular fa-user me-2"></i>{{user.username }}
+                </a>
+                <a href="{% url 'index' %}" id="project-link" class="hover:text-blue-500 transition-colors">Projects</a>
+                <a href="{% url 'logout' %}"
+                    class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded transition-colors w-full md:w-auto">
+                    Logout
+                </a>
+                {% else %}
+                <a href="{% url 'register' %}" id="register-link"
+                    class="hover:text-blue-500 transition-colors">Register</a>
+                <a href="{% url 'login' %}" id="login-link" class="hover:text-blue-500 transition-colors">Login</a>
+                {% endif %}
             </div>
         </div>
     </nav>
@@ -52,6 +50,11 @@
         {% block body %}
         {% endblock %}
     </div>
+    <footer class="bg-dark-100 text-center py-4 fixed bottom-0 left-0 right-0">
+        <p>&copy; 2023 builtbyjb. All rights reserved.</p>
+    </footer>
+
+    <!-- Script -->
     {% block script %}
     {% endblock %}
 </body>

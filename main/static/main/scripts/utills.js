@@ -1,9 +1,6 @@
 // Get csrftoken
-export function getCSRFToken() {
-    const cookie = document.cookie.split("=");
-    const csrftoken = cookie[1];
-    return csrftoken
-}
+const cookie = document.cookie.split("=");
+const csrftoken = cookie[1];
 
 // Set active page
 export function setActive() {
@@ -98,7 +95,7 @@ export function deleteElement(id) {
 // Displays pop up view
 export function displayPopUp(divId) {
     const div = document.querySelector(`#${divId}`);
-    div.classList.remove("hide-pop-up");
+    div.classList.remove("hidden");
 }
 
 // Close pop up view
@@ -107,7 +104,7 @@ export function closePopUp(id) {
         field.value = "";
     });
     const div = document.querySelector(`#${id}`);
-    div.classList.add("hide-pop-up");
+    div.classList.add("hidden");
 
     // clear comment view
     try {

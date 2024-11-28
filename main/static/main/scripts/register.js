@@ -1,16 +1,25 @@
+import { setActive } from "./utills.js";
+
+// Set active page
+setActive()
+
 // Ensure password and confirmation password match
-const confirmation = document.querySelector("#confirmation");
-const msg = document.querySelector("#regMsg");
+const confirmPassword = document.querySelector("#confirm-password");
+const alertText = document.querySelector("#alert-text");
+const alert = document.querySelector("#alert");
 
-confirmation.addEventListener("keyup", () => {
-    const password = document.querySelector("#passwordReg").value;
+confirmPassword.addEventListener("keyup", () => {
+    const password = document.querySelector("#password").value;
 
-    if (password !== confirmation.value) {
-        msg.classList.add("alert", "alert-danger");
-        msg.innerText = "Passwords do not match";
-    } else {
-        msg.classList.remove("alert", "alert-danger");
-        msg.classList.add("alert", "alert-success");
-        msg.innerText = "Passwords Match";
+    if (confirmPassword.value.length === password.length) {
+        if (password !== confirmPassword.value) {
+            alert.classList.remove('bg-blue-500');
+            alert.classList.add('bg-red-500');
+            alertText.textContent = "Passwords do not match";
+        } else {
+            alert.classList.remove('bg-red-500');
+            alert.classList.add('bg-blue-500');
+            alertText.textContent = 'Passwords match';
+        }
     }
 });

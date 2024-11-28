@@ -16,11 +16,11 @@ def register(request):
 
         # Password match confirmation
         password = request.POST["password"]
-        confirm_password = request.POST["confirmation"]
+        confirm_password = request.POST["confirm-password"]
 
         if password != confirm_password:
             return render(request, "main/register.html", {
-                "msg": "Passwords must match."
+                "msg": "Passwords do not match."
             })
 
         # Attempt to create a new user
