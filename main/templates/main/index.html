@@ -1,63 +1,70 @@
 {% extends "main/layout.html" %}
 
 {% block body %}
-<div class="flex justify-between">
+<div class="">
     <div>
         <button id="create-project-btn"
-            class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded mb-4">
+            class="bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded mb-4">
             <i class="fa-solid fa-plus"></i>
             Create Project
         </button>
     </div>
     <div class="mb-4">
-        <i class="fa-solid fa-magnifying-glass"></i>
-        <input type="text" id="search-project-name" name="search" placeholder="Enter project name"
+        <input type="text" id="search-project-name" name="search" placeholder="Search project name"
             class="px-3 py-2 bg-gray-700 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
     </div>
 </div>
 <br>
 <div class="mb-4">
-    <label for="filter-project" class="block text-sm font-medium mb-2">Filter Projects</label>
+    <label for="filter-project" class="block text-sm">Filter Projects</label>
     <select id="filter-project" name="filter-project"
-        class="px-3 py-2 bg-gray-700 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-        <option {% if filter is "all" %} selected {% endif %} value="all">
+        class="px-2 py-1 bg-gray-700 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+        <option {% if filter == "all" %} selected {% endif %} value="all">
             All
         </option>
-        <option {% if filter is "completed" %} selected {% endif %} value="completed">
+        <option {% if filter == "completed" %} selected {% endif %} value="completed">
             Completed
         </option>
-        <option {% if filter is "uncompleted" %} selected {% endif %} value="uncompleted">
+        <option {% if filter == "uncompleted" %} selected {% endif %} value="uncompleted">
             Uncompleted
         </option>
-        <option {% if filter is "created" %} selected {% endif %} value="created">
+        <option {% if filter == "created" %} selected {% endif %} value="created">
             Created
         </option>
-        <option {% if filter is "joined" %} selected {% endif %} value="joined">
+        <option {% if filter == "joined" %} selected {% endif %} value="joined">
             Joined
         </option>
     </select>
 </div>
-<div class="cards">
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
     {% for project in projects %}
-    <div id="project-{{ project.id }}" data-filter class="delete-item shadow" data-projectid="{{ project.id }}">
-        <a class="text-decoration-none text-black" href="/project/{{ project.id }}">
+    <div id="project-{{ project.id }}" 
+        data-filter 
+        class="delete-item bg-dark-100 p-4 rounded-lg shadow md:w-fit lg:w-fit" 
+        data-projectid="{{ project.id }}"
+    >
+        <a href="/project/{{ project.id }}">
             <div>
-                <h6 id="project-name-{{project.id}}" class="mb-3">{{ project.name }}</h6>
-                <p> Team leader: {{ project.team_leader }}</p>
-            </div>
-            <div class="d-flex align-items-center">
-                {% if project.is_completed %}
-                <p class="text-success me-4"><i class="fa-solid fa-check"></i></p>
-                {% endif %}
-
+                <h3 id="project-name-{{project.id}}" 
+                    class="text-lg font-semibold mb-2">
+                    {{ project.name }}
+                </h3>
                 {% if project.creator == user.username %}
-                <p class="text-info me-4"><i class="fa-solid fa-user"></i></p>
+                <p class="text-gray-400"> Creator: Me</p>
                 {% else %}
-                <p class="me-2">Joined</p>
+                <p class="text-gray-400"> Creator: {{ project.creator }}</p>
+                {% endif %}
+                <p class="text-gray-400 mb-2"> Team leader: {{ project.team_leader }}</p>
+            </div>
+            <div class="flex items-center">
+                {% if project.is_completed %}
+                <p class="text-sm text-green-500 me-4">Completed</p>
                 {% endif %}
 
                 {% if project.creator == user.username %}
-                <button id="delete-project" class="btn btn-danger btn-sm" data-id="{{ project.id }}">
+                <button id="delete-project" 
+                    data-id="{{ project.id }}"
+                    class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded transition-colors">
                     <i class="fa-solid fa-trash-can"></i>
                 </button>
                 {% endif %}
@@ -68,33 +75,56 @@
 </div>
 
 <!-- Create project pop up -->
-<div id="create-project-main-div" class="hidden pop-up-background">
-    <div id="create-project-div" class="pop-up-view shadow">
-        <div>
-            <h6>Create Project</h6>
-        </div>
-        <hr>
+<div id="create-project-main-div" 
+    class="hidden absolute top-0 left-0 w-full h-full bg-dark-200 bg-opacity-50 flex justify-center items-center"
+>
+    <div id="create-project-div" 
+        class="shadow bg-dark-100 md:w-1/2 md:h-96 rounded-lg p-4 w-full me-2 ms-2"
+    >
+        <h6 class="text-2xl font-bold mb-6 text-center">Create Project</h6>
         <div class="w-100">
             <form id="create-project-form">
-                <div class="mb-3">
-                    <label for="project-name-create" class="form-label">Project Name</label>
-                    <input type="text" class="form-control clear-field" id="project-name-create" name="project-name"
-                        maxlength="50" required>
+                <div class="mb-4">
+                    <label for="create-project-name" 
+                        class="block mb-2 text-sm font-medium"
+                    >
+                        Project Name
+                    </label>
+                    <input type="text" 
+                        class="clear-field w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        id="create-project-name" 
+                        name="project-name"
+                        maxlength="50" 
+                        required
+                    >
                 </div>
                 <div class="mb-3">
-                    <label for="project-description-create" class="form-label">
+                    <label for="create-project-description" 
+                        class="block mb-2 text-sm font-medium"
+                    >
                         Project Description
                     </label>
-                    <textarea class="form-control clear-field" id="project-description-create"
-                        name="project-description" rows="3" maxlength="200" required></textarea>
+                    <textarea id="create-project-description"
+                        class="clear-field w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        name="project-description" 
+                        rows="3" 
+                        maxlength="200" 
+                        required
+                    ></textarea>
                 </div>
-                <div class="mt-3 d-flex justify-content-between">
+                <div class="mt-3 flex justify-between">
                     <div>
-                        <button type="button" id="close-project-pop-up" class="btn btn-primary me-3">
+                        <button type="button" 
+                            id="close-project-pop-up" 
+                            class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline transition-colors me-4"
+                        >
                             <i class="fa-solid fa-xmark"></i>
-                            Cancel
+                            Close
                         </button>
-                        <input type="submit" class="btn btn-primary" value="Create project">
+                        <input type="submit" 
+                            class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline transition-colors"
+                            value="Create project"
+                        >
                     </div>
                     <div>
                         <span id="pro-des-count">0</span>

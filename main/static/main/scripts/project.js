@@ -1,13 +1,41 @@
+import {
+    textCounter,
+    displayPopUp,
+    sendDeleteRequests,
+    sendGetRequests,
+    sendPostRequests,
+    sendPutRequests,
+    handleNav,
+    closePopUp
+ } from "./utills.js";
+
+
+// Handles navbar
+handleNav();
+
+const dropdownToggle = document.getElementById('dropdownToggle');
+const dropdownContent = document.getElementById('dropdownContent');
+const dropdownIcon = dropdownToggle.querySelector('svg');
+
+dropdownToggle.addEventListener('click', () => {
+    dropdownContent.classList.toggle('hidden');
+    dropdownIcon.classList.toggle('rotate-180');
+});
+
+// Close the dropdown when clicking outside
+document.addEventListener('click', (event) => {
+    if (!dropdownToggle.contains(event.target) && !dropdownContent.contains(event.target)) {
+        dropdownContent.classList.add('hidden');
+        dropdownIcon.classList.remove('rotate-180');
+    }
+});
+
 document.querySelector("#task-text").addEventListener("keyup", () => {
     textCounter("task-text", "task-text-count");
 });
 
 document.querySelector("#comment-text").addEventListener("keyup", () => {
     textCounter("comment-text", "comment-text-count");
-});
-
-document.querySelector("#edited-text").addEventListener("keyup", () => {
-    textCounter("edited-text", "edited-text-count");
 });
 
 document.querySelector("#add-task-btn").onclick = () => {
@@ -74,29 +102,7 @@ document.querySelector("#close-project-name-pop-up").addEventListener("click", (
     closePopUp("edit-project-name-main-div");
 });
 
-document.querySelector("#close-team-member-view-pop-up").addEventListener("click", () => {
-    closePopUp("team-member-view-main");
-});
-
-document.querySelector("#create-project-form").onsubmit = async (event) => {
-    event.preventDefault();
-
-    const name = document.querySelector("#project-name-create").value;
-    const description = document.querySelector("#project-description-create").value;
-
-    const formData = new FormData();
-    formData.append("project-name", name);
-    formData.append("project-description", description);
-
-    const response = await sendPostRequests("project", formData);
-    if (response.error) {
-        alert(response.error);
-    } else {
-        closePopUp("create-project-div");
-        window.location.assign(`/project/${response.projectId}`);
-    }
-};
-
+// Delete project
 document.querySelector("#delete-project-exp").onclick = async () => {
     const id = document.querySelector("#delete-project-exp").dataset.id;
 
@@ -308,17 +314,17 @@ function generateComment(comment, username, taskId) {
     const mainDiv = document.querySelector("#comments-display-div");
     const div = document.createElement("div");
     div.setAttribute("id", `comment-${comment.id}`);
-    div.classList.add("delete-item", "shadow");
+    div.classList.add("delete-item", "shadow", "bg-dark-100", "p-4", "rounded-lg", "w-full");
     div.innerHTML = `
         <div>
             <p><strong>${comment.creator}</strong></p>
-            <p id="comment-text-${comment.id}" class="lh-sm" >${comment.comment}</p>
+            <p id="comment-text-${comment.id}">${comment.comment}</p>
         </div>
     `;
     const subDiv = document.createElement("div");
 
     const editBtn = document.createElement("button");
-    editBtn.classList.add("btn", "btn-outline-dark", "btn-sm", "me-3");
+    editBtn.classList.add("me-4", "bg-blue-600", "hover:bg-blue-700", "me-3", "text-white", "font-bold", "py-2", "px-4", "rounded", "focus:outline-none", "focus:shadow-outline", "transition-colors");
     editBtn.setAttribute("id", "edit-comment");
     editBtn.setAttribute("data-id", comment.id);
     editBtn.setAttribute("data-taskid", taskId);
@@ -331,7 +337,7 @@ function generateComment(comment, username, taskId) {
     `;
 
     const deleteBtn = document.createElement("button");
-    deleteBtn.classList.add("btn", "btn-danger", "btn-sm");
+    deleteBtn.classList.add("me-4", "bg-red-600", "hover:bg-red-700", "text-white", "font-bold", "py-2", "px-4", "rounded", "focus:outline-none", "focus:shadow-outline", "transition-colors");
     deleteBtn.setAttribute("id", "delete-comment");
     deleteBtn.setAttribute("data-id", `${comment.id}`);
     deleteBtn.setAttribute("data-taskid", taskId);
@@ -358,7 +364,7 @@ function generateTask(response) {
 
     subDiv.setAttribute("id", `task-${response.taskId}`);
     subDiv.setAttribute("data-id", response.taskId);
-    subDiv.classList.add("delete-item", "shadow");
+    subDiv.classList.add("delete-item", "shadow", "bg-dark-100", "p-4", "rounded-lg", "md:w-fit", "lg:w-fit");
     subDiv.innerHTML = `
         <div class="mb-4">
             <p id="task-text-${response.taskId}">${response.task}</p>
@@ -374,7 +380,7 @@ function generateTask(response) {
         is the project creator or team leader */
     if (response.projectCreator === response.user || response.projectTeamLeader === response.user) {
         const select = document.createElement("select");
-        select.classList.add("form-select");
+        select.className = "px-2 w-full py-1 bg-gray-700 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
         select.setAttribute("data-id", response.taskId);
         select.setAttribute("id", "assign-team-member");
         select.innerHTML = `
@@ -411,7 +417,7 @@ function generateTask(response) {
 
     // Tasks stage select
     const select = document.createElement("select");
-    select.classList.add("form-select", "mb-3");
+    select.className ="mb-4 w-full px-2 py-1 bg-gray-700 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
     select.setAttribute("id", "task-stage-change");
     select.setAttribute("data-taskid", response.taskId);
 
@@ -447,23 +453,16 @@ function generateTask(response) {
     delDiv.classList.add("d-flex", "align-items-center");
     delDiv.innerHTML = `
         <button id="view-comment" data-taskid="${response.taskId}"
-            class="comment-view btn btn-outline-dark btn-sm position-relative me-3">
+            class="bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded me-4 relative"
             <i id="view-comment" data-taskid="${response.taskId}" class="fa-solid fa-comment"></i>
-            <span id="task-comment-count-${response.taskId}"
-                class="position-absolute
-                        top-0 start-100
-                        translate-middle
-                        badge
-                        rounded-pill
-                        bg-primary"
-            >
+            <span id="task-comment-count-${response.taskId}" class="absolute top-0 right-1">
               ${response.commentNumber}
               <span class="visually-hidden">number of comments</span>
             </span>
           </button>
         </button>
         <button id="edit-task"
-            class="btn btn-outline-dark btn-sm me-3"
+            class="me-4 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline transition-colors"
             data-taskid="${response.taskId}"
         >
             <i id="edit-task"
@@ -475,7 +474,7 @@ function generateTask(response) {
 
     if (response.projectCreator === response.user || response.projectTeamLeader === response.user) {
         const btn = document.createElement("button");
-        btn.classList.add("btn", "btn-danger", "btn-sm");
+        btn.className = "bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline transition-colors me-4"
         btn.setAttribute("id", "delete-task");
         btn.setAttribute("data-taskid", response.taskId);
         btn.innerHTML = `
@@ -499,25 +498,28 @@ function generateTeamMember(response) {
     const li = document.createElement("li");
     li.classList.add("m-2", "shadow", "p-3");
     li.setAttribute("data-remove", response.team[0].id)
-    li.innerHTML = `
-        <p id="member-username-${response.team[0].id}" 
-             data-teamid="${response.team[0].id}"
-        >${response.team[0].member}</p>
-    `;
 
     const roleDiv = document.createElement("div");
-    roleDiv.classList.add("d-flex", "align-items-center", "justify-content-between");
+    roleDiv.classList.add("flex", "items-center", "justify-between");
     roleDiv.innerHTML = `
-        <p id="team-member-${response.team[0].member}">${response.team[0].role}</p>
+        <div>
+            <h3 id="member-username-${response.team[0].id}" 
+                data-teamid="${response.team[0].id}"
+                class="text-lg font-semibold"
+            >${response.team[0].member}</h3>
+            <p id="team-member-${response.team[0].member}"
+                class="text-sm text-gray-400"
+            >${response.team[0].role}</p>
+        </div>
     `;
 
     const btnDiv = document.createElement("div");
-    btnDiv.classList.add("d-flex");
+    btnDiv.classList.add("flex", "space-x-2");
 
     if (response.projectCreator === response.username) {
         if (response.team[0].role !== "Admin") {
             const editbtn = document.createElement("button");
-            editbtn.classList.add("btn", "btn-outline-dark", "btn-sm", "me-3");
+            editbtn.className = "bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
             editbtn.setAttribute("id", "team-role-edit");
             editbtn.setAttribute("data-remove", response.team[0].id);
             editbtn.setAttribute("data-teamid", response.team[0].id);
@@ -530,7 +532,8 @@ function generateTeamMember(response) {
                     data-teamid="${response.team[0].id}"
                     data-teamrole="${response.team[0].role}"
                     data-teammember="${response.team[0].member}"
-                    class="fa-solid fa-pen-to-square"></i>
+                    class="fa-solid fa-pen-to-square"
+                ></i>
             `;
 
             btnDiv.append(editbtn);
@@ -538,13 +541,14 @@ function generateTeamMember(response) {
     }
 
     const delbtn = document.createElement("button");
-    delbtn.classList.add("btn", "btn-danger", "btn-sm");
+    delbtn.className = "bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-red-500"
     delbtn.setAttribute("id", "team-member-delete");
     delbtn.setAttribute("data-teamid", response.team[0].id);
     delbtn.innerHTML = `
         <i id="team-member-delete"
             data-teamid=${response.team[0].id} 
-            class="fa-solid fa-trash-can"></i>
+            class="fa-solid fa-trash-can"
+        ></i>
     `;
 
     if (response.team[0].role !== "Admin") {

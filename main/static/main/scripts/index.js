@@ -1,19 +1,33 @@
-import { displayPopUp, setActive } from "./utills.js";
+import {
+    displayPopUp,
+    setActive,
+    closePopUp,
+    textCounter,
+    handleNav,
+    sendDeleteRequests,
+    sendPostRequests
+} from "./utills.js";
 
 // Set active page
-setActive()
+setActive();
+
+// Handle navbar
+handleNav();
 
 // Display text count
-document.querySelector("#project-description-create").addEventListener("keyup", () => {
-    textCounter("project-description-create", "pro-des-count");
+document.querySelector("#create-project-description").addEventListener("keyup", () => {
+    textCounter("create-project-description", "pro-des-count");
 });
 
+// Display create-project pop-up
 document.querySelector("#create-project-btn").onclick = () => {
     displayPopUp("create-project-main-div");
 };
 
+// Close create-project pop-up
 document.querySelector("#close-project-pop-up").addEventListener("click", () => {
     closePopUp("create-project-main-div");
+    document.querySelector("#pro-des-count").textContent = 0;
 });
 
 // Delete project
@@ -59,3 +73,22 @@ searchProject.addEventListener("keyup", () => {
         }
     })
 })
+
+document.querySelector("#create-project-form").onsubmit = async (event) => {
+    event.preventDefault();
+
+    const name = document.querySelector("#create-project-name").value;
+    const description = document.querySelector("#create-project-description").value;
+
+    const formData = new FormData();
+    formData.append("project-name", name);
+    formData.append("project-description", description);
+
+    const response = await sendPostRequests("project", formData);
+    if (response.error) {
+        alert(response.error);
+    } else {
+        closePopUp("create-project-div");
+        window.location.assign(`/project/${response.projectId}`);
+    }
+};
