@@ -3,9 +3,9 @@
 
 {% block body %}
 <div class="mb-2 flex jusitfy-between">
-    <div class="flex mt-3">
+    <div class="flex mt-3 me-4">
         <h6 id="project-name" 
-            class="me-3 text-2xl font-bold" 
+            class="me-2 text-2xl font-bold" 
             data-id="{{ project.id }}" 
             data-currentuser="{{user.username}}"
             data-projectcreator="{{project.creator}}" 
@@ -189,7 +189,7 @@
     {% for task in tasks %}
     <div id="task-{{ task.id }}" 
         data-id="{{ task.id }}" 
-        class="delete-item shadow bg-dark-100 p-4 rounded-lg md:w-fit lg:w-fit"
+        class="delete-item shadow bg-dark-100 p-4 rounded-lg"
     >
         <p id="task-text-{{ task.id }}" class="mb-2">{{ task.task }}</p>
         <div class="mb-3">
@@ -427,6 +427,7 @@
                 </button>
                 <input id="add-team-member" 
                     type="submit" 
+                    data-projectid="{{ project.id }}"
                     class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline transition-colors"
                     value="Add"
                 />

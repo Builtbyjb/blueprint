@@ -6,7 +6,8 @@ import {
     sendPostRequests,
     sendPutRequests,
     handleNav,
-    closePopUp
+    closePopUp,
+    deleteElement
  } from "./utills.js";
 
 
@@ -46,12 +47,14 @@ document.querySelector("#add-task-btn").onclick = () => {
     displayPopUp("add-task-main-div");
 };
 
-document.querySelector("#team-member-btn").onclick = () => {
-    document.querySelector("#team-member-username").removeAttribute("disabled");
-    document.querySelector("#add-team-member-header").textContent = "Add Team Member";
-    document.querySelector("#add-team-member").value = "Add";
-    displayPopUp("team-member-main-div");
-};
+try {
+    document.querySelector("#team-member-btn").onclick = () => {
+        document.querySelector("#team-member-username").removeAttribute("disabled");
+        document.querySelector("#add-team-member-header").textContent = "Add Team Member";
+        document.querySelector("#add-team-member").value = "Add";
+        displayPopUp("team-member-main-div");
+    };
+} catch (TypeError) { }
 
 // View comments
 document.addEventListener("click", async (event) => {
@@ -68,6 +71,7 @@ document.addEventListener("click", async (event) => {
             document.querySelector("#task-id").value = response.taskId;
             document.querySelector("#comment-submit").dataset.taskId = response.taskId;
             document.querySelector("#comment-div-count").textContent = response.commentCount;
+
             if (response.comments.length > 0) {
                 response.comments.forEach((comment) => {
                     generateComment(comment, response.username, response.taskId);
@@ -103,16 +107,19 @@ document.querySelector("#close-project-name-pop-up").addEventListener("click", (
 });
 
 // Delete project
-document.querySelector("#delete-project-exp").onclick = async () => {
-    const id = document.querySelector("#delete-project-exp").dataset.id;
+try {
+    document.querySelector("#delete-project-exp").onclick = async () => {
+        const id = document.querySelector("#delete-project-exp").dataset.id;
 
-    const response = await sendDeleteRequests("project", id);
-    if (response.error) {
-        console.error(response.error);
-    } else {
-        window.location.replace("/");
-    }
-};
+        const response = await sendDeleteRequests("project", id);
+        if (response.error) {
+            console.error(response.error);
+        } else {
+            window.location.replace("/");
+        }
+    };
+
+} catch(TypeError) {}
 
 async function updateCommentCount(taskId, commentCount) {
     const formData = new FormData();
@@ -259,13 +266,16 @@ document.querySelector("#add-task-form").onsubmit = async (event) => {
     }
 };
 
-document.querySelector("#edit-project-name").onclick = () => {
-    displayPopUp("edit-project-name-main-div");
+try {
+    document.querySelector("#edit-project-name").onclick = () => {
+        displayPopUp("edit-project-name-main-div");
 
-    const projectName = document.querySelector("#project-name").textContent;
-    document.querySelector("#name-text").value = projectName;
-    document.querySelector("#name-text-count").textContent = projectName.length;
-};
+        const projectName = document.querySelector("#project-name").textContent;
+        document.querySelector("#name-text").value = projectName;
+        document.querySelector("#name-text-count").textContent = projectName.length;
+    };
+
+} catch(TypeError) { }
 
 document.querySelector("#edit-project-name-form").onsubmit = async (event) => {
     event.preventDefault();
@@ -285,13 +295,16 @@ document.querySelector("#edit-project-name-form").onsubmit = async (event) => {
     }
 };
 
-document.querySelector("#edit-project-des").onclick = () => {
-    displayPopUp("edit-project-des-main-div");
+try {
+    document.querySelector("#edit-project-des").onclick = () => {
+        displayPopUp("edit-project-des-main-div");
 
-    const projectDescription = document.querySelector("#project-description").textContent;
-    document.querySelector("#description-text").value = projectDescription;
-    document.querySelector("#description-text-count").textContent = projectDescription.length;
-};
+        const projectDescription = document.querySelector("#project-description").textContent;
+        document.querySelector("#description-text").value = projectDescription;
+        document.querySelector("#description-text-count").textContent = projectDescription.length;
+    };
+
+} catch (TypeError) { }
 
 document.querySelector("#edit-project-des-form").onsubmit = async (event) => {
     event.preventDefault();
@@ -316,7 +329,7 @@ function generateComment(comment, username, taskId) {
     div.setAttribute("id", `comment-${comment.id}`);
     div.classList.add("delete-item", "shadow", "bg-dark-100", "p-4", "rounded-lg", "w-full");
     div.innerHTML = `
-        <div>
+        <div class="mb-3">
             <p><strong>${comment.creator}</strong></p>
             <p id="comment-text-${comment.id}">${comment.comment}</p>
         </div>
@@ -364,7 +377,7 @@ function generateTask(response) {
 
     subDiv.setAttribute("id", `task-${response.taskId}`);
     subDiv.setAttribute("data-id", response.taskId);
-    subDiv.classList.add("delete-item", "shadow", "bg-dark-100", "p-4", "rounded-lg", "md:w-fit", "lg:w-fit");
+    subDiv.classList.add("delete-item", "shadow", "bg-dark-100", "p-4", "rounded-lg");
     subDiv.innerHTML = `
         <div class="mb-4">
             <p id="task-text-${response.taskId}">${response.task}</p>
@@ -450,14 +463,15 @@ function generateTask(response) {
 
     // Delete and Edit buttons
     const delDiv = document.createElement("div");
-    delDiv.classList.add("d-flex", "align-items-center");
+    delDiv.classList.add("flex", "items-center");
     delDiv.innerHTML = `
-        <button id="view-comment" data-taskid="${response.taskId}"
+        <button id="view-comment"
+            data-taskid="${response.taskId}"
             class="bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded me-4 relative"
+        >
             <i id="view-comment" data-taskid="${response.taskId}" class="fa-solid fa-comment"></i>
             <span id="task-comment-count-${response.taskId}" class="absolute top-0 right-1">
               ${response.commentNumber}
-              <span class="visually-hidden">number of comments</span>
             </span>
           </button>
         </button>
@@ -592,7 +606,7 @@ document.addEventListener("change", async (event) => {
     const taskId = element.dataset.id;
 
     if (element.id === "assign-team-member") {
-        data = { assign: element.value };
+        const data = { assign: element.value };
 
         const response = await sendPutRequests("assign", taskId, data);
         if (response.error) {
@@ -602,26 +616,24 @@ document.addEventListener("change", async (event) => {
 });
 
 // Filter tasks based on team members
-const teamSelect = document.querySelector("#team-filter");
-const taskSelect = document.querySelector("#task-filter");
-teamSelect.addEventListener("change", () => {
+const teamSelectMembers = document.querySelector("#team-filter");
+const taskSelectMembers = document.querySelector("#task-filter");
+teamSelectMembers.addEventListener("change", () => {
     const projectId = document.querySelector("#project-name").dataset.id;
     window.location.assign(
-        `/project/${projectId}?assigned=${teamSelect.value}&stage=${taskSelect.value}`
+        `/project/${projectId}?assigned=${teamSelectMembers.value}&stage=${taskSelectMembers.value}`
     );
 });
 
 // Filter tasks based on tasks stage
-try {
-    const taskSelect = document.querySelector("#task-filter");
-    const teamSelect = document.querySelector("#team-filter");
-    taskSelect.addEventListener("change", () => {
-        const projectId = document.querySelector("#project-name").dataset.id;
-        window.location.assign(
-            `/project/${projectId}?assigned=${teamSelect.value}&stage=${taskSelect.value}`
-        );
-    });
-} catch (TypeError) { }
+const taskSelectStage = document.querySelector("#task-filter");
+const teamSelectStage = document.querySelector("#team-filter");
+taskSelectStage.addEventListener("change", () => {
+    const projectId = document.querySelector("#project-name").dataset.id;
+    window.location.assign(
+        `/project/${projectId}?assigned=${teamSelectStage.value}&stage=${taskSelectStage.value}`
+    );
+});
 
 // Project isCompleted
 try {
@@ -655,44 +667,42 @@ document.addEventListener("click", (event) => {
 })
 
 // Add team member
-try {
-    document.querySelector("#add-team-member").onclick = async (event) => {
-        event.preventDefault();
+document.querySelector("#add-team-member").onclick = async (event) => {
+    event.preventDefault();
 
-        const input = document.querySelector("#add-team-member");
-        const username = document.querySelector("#team-member-username").value;
-        const projectId = document.querySelector("#add-team-member").dataset.id;
-        const role = document.querySelector("#role-select").value;
+    const input = document.querySelector("#add-team-member");
+    const username = document.querySelector("#team-member-username").value;
+    const projectId = document.querySelector("#add-team-member").dataset.projectid;
+    const role = document.querySelector("#role-select").value;
 
-        if (input.value == "Add") {
-            const formData = new FormData();
-            formData.append("username", username);
-            formData.append("project_id", projectId);
-            formData.append("role", role);
+    if (input.value == "Add") {
+        const formData = new FormData();
+        formData.append("username", username);
+        formData.append("project_id", projectId);
+        formData.append("role", role);
 
-            const response = await sendPostRequests("team", formData);
-            if (response.error) {
-                alert(response.error);
-            } else {
-                generateTeamMember(response);
-                alert(response.success)
-                closePopUp("team-member-main-div")
-            }
-        } else { // Input.value === "Save"
-            const data = { project_id: projectId, role: role, username: username };
-            const response = await sendPutRequests("team", projectId, data);
-            if (response.error) {
-                alert(response.error);
-            } else {
-                document.querySelector("#add-team-member-header").textContent = "Add Team Member";
-                document.querySelector("#add-team-member").value = "Add";
-                updateRole(username, role);
-                closePopUp("team-member-main-div");
-                alert(response.success);
-            }
+        const response = await sendPostRequests("team", formData);
+        if (response.error) {
+            alert(response.error);
+        } else {
+            generateTeamMember(response);
+            alert(response.success)
+            closePopUp("team-member-main-div")
         }
-    };
-} catch (TypeError) { }
+    } else { // Input.value === "Save"
+        const data = { project_id: projectId, role: role, username: username };
+        const response = await sendPutRequests("team", projectId, data);
+        if (response.error) {
+            alert(response.error);
+        } else {
+            document.querySelector("#add-team-member-header").textContent = "Add Team Member";
+            document.querySelector("#add-team-member").value = "Add";
+            updateRole(username, role);
+            closePopUp("team-member-main-div");
+            alert(response.success);
+        }
+    }
+};
 
 /*
 Allows newly created team member html elements 

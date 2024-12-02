@@ -123,7 +123,7 @@ def project(request, id=None):
             team = Team(
                 project=project,
                 member=creator,
-                role="admin",
+                role="Admin",
             )
             team.save()
 

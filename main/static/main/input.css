@@ -13,3 +13,26 @@
 .active {
   border-bottom: 2px solid darkgray;
 }
+
+@keyframes deleteAnimation {
+  0% {
+      opacity: 1;
+      max-height: 200px;
+      margin-bottom: 20px;
+  }
+  50% {
+      opacity: 0.5;
+      max-height: 100px;
+      margin-bottom: 10px;
+  }
+  100% {
+      opacity: 0;
+      max-height: 0;
+      margin-bottom: 0;
+  }
+}
+
+.delete-item {
+  animation: deleteAnimation 0.5s ease-in-out forwards;
+  animation-play-state: paused;
+}

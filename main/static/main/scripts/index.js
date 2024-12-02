@@ -5,7 +5,8 @@ import {
     textCounter,
     handleNav,
     sendDeleteRequests,
-    sendPostRequests
+    sendPostRequests,
+    deleteElement
 } from "./utills.js";
 
 // Set active page
