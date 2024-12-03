@@ -60,6 +60,8 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = 'blueprint.urls'
 
+CSRF_TRUSTED_ORIGINS = ['https://blueprint.ajibolaawotide.com']
+
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
