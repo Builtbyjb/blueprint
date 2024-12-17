@@ -35,7 +35,10 @@ def register(request):
         login(request, user)
         return HttpResponseRedirect(reverse("index"))
     else:
-        return render(request, "main/register.html")
+        if request.user.is_authenticated:
+            return HttpResponseRedirect(reverse("index"))
+        else:
+            return render(request, "main/register.html")
 
 
 def login_view(request):
@@ -53,7 +56,10 @@ def login_view(request):
                 "msg": "Invalid username and/or password"
             })
     else:
-        return render(request, "main/login.html")
+        if request.user.is_authenticated:
+            return HttpResponseRedirect(reverse("index"))
+        else:
+            return render(request, "main/login.html")
 
 
 def logout_view(request):
