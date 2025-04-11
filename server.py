@@ -22,12 +22,20 @@ class Task(BaseModel):
 
 
 @app.get("/")
-async def health_check(request: Request):
+async def Index(request: Request):
+    return templates.TemplateResponse(
+        request=request,
+        name="index.html",
+        context={}
+    )
+
+
+@app.get("/health")
+async def health_check():
     return {"ping": "pong"}
 
 
 @app.post("/api/v1/task")
 async def create_task(request: Request, task: Task):
-    # my_taskie(task.task)
-    print(task.task)
+    my_taskie(task.task)
     return {"message": "Task created"}

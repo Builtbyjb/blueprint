@@ -130,12 +130,11 @@ def isAuth(db, dbCon):
                     timeout=15)
                 if response.status_code == 200:
                     token_json = response.json()
-                    new_refresh_token = token_json["refresh_token"]
                     new_access_token = token_json["access_token"]
 
                     # Save new access_token and refresh_token
-                    sql = "UPDATE user SET refresh_token=? access_token=? WHERE id=?"
-                    values = (new_refresh_token, new_access_token, USER_ID)
+                    sql = "UPDATE user SET access_token=? WHERE id=?"
+                    values = (new_access_token, USER_ID)
                     db.execute(sql, values)
                     dbCon.commit()
 
