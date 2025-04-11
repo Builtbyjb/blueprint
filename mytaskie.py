@@ -1,10 +1,5 @@
-#!/usr/bin/env python3
-
-
-import argparse
 import requests
 import sys
-from dotenv import load_dotenv
 from google import genai
 import datetime
 import pytz
@@ -12,6 +7,7 @@ import os
 import sqlite3
 import tzlocal
 import json
+from logger import logger
 from dateutil import parser as dateutil_parser
 from dateutil.relativedelta import relativedelta
 from google.oauth2.credentials import Credentials
@@ -27,11 +23,14 @@ CALENDAR_SCOPES = ['https://www.googleapis.com/auth/calendar']
 TOKEN_INFO_URL = "https://www.googleapis.com/oauth2/v3/tokeninfo"
 TOKEN_REFRESH_URL = "https://oauth2.googleapis.com/token"
 
+
 # Create a sqlite3 database engine
 def database():
     dbCon = sqlite3.connect("db.sqlite3")
     db = dbCon.cursor()
-    db.execute("CREATE TABLE IF NOT EXISTS user(id, refresh_token, access_token)")
+    db.execute("""
+               CREATE TABLE IF NOT EXISTS user(id, refresh_token, access_token)
+            """)
     return db, dbCon
 
 
@@ -42,23 +41,28 @@ def generate_prompt(task):
         local_tz_name = str(local_tz)
         print(f"Using local timezone: {local_tz_name}")
     except Exception as tz_err:
-        print(f"Warning: Could not reliably determine local timezone ({tz_err}). Gemini might use UTC or make assumptions.", file=sys.stderr)
+        print(f"""
+            Warning: Could not reliably determine local timezone ({tz_err}).
+            Gemini might use UTC or make assumptions.""", file=sys.stderr)
         # Fallback or prompt user if needed - for now, proceed cautiously
-        local_tz = pytz.utc # Fallback to UTC
+        local_tz = pytz.utc  # Fallback to UTC
 
     now_local = datetime.datetime.now(local_tz)
     now_iso = now_local.isoformat()
 
     prompt = f"""
-    Analyze the following task description and extract the details needed to create a Google Calendar event.
-    Assume the current time is {now_iso} in the {local_tz} timezone unless otherwise specified in the task.
+    Analyze the following task description and extract the details needed to
+    create a Google Calendar event. Assume the current time is {now_iso}
+    in the {local_tz} timezone unless otherwise specified in the task.
 
     Task: "{task}"
 
     Provide the output ONLY as a JSON object with the following keys:
     - "summary": A concise title for the event (string).
-    - "start_time": The start date and time in ISO 8601 format (YYYY-MM-DDTHH:MM:SS±HH:MM). Infer the date if only
-    time is mentioned (assume today or the nearest future date). Include the correct timezone offset.
+    - "start_time": The start date and time in ISO 8601 format
+    (YYYY-MM-DDTHH:MM:SS±HH:MM). Infer the date if only
+    time is mentioned (assume today or the nearest future date). Include the
+    correct timezone offset.
     - "end_time": The end date and time in ISO 8601 format (YYYY-MM-DDTHH:MM:SS±HH:MM). If only a start time or
     duration is mentioned, assume a default duration of {DEFAULT_EVENT_DURATION_MINUTES} minutes. Ensure the end
     time includes the correct timezone offset.
@@ -106,7 +110,7 @@ def isAuth(db, dbCon):
         response = requests.get(
             TOKEN_INFO_URL,
             params={'access_token': access_token},
-            timeout=10 # Add a timeout
+            timeout=10  # Add a timeout
         )
         if response.status_code == 200:
             return True
@@ -120,7 +124,10 @@ def isAuth(db, dbCon):
             }
 
             try:
-                response = requests.post(TOKEN_REFRESH_URL, data=payload, timeout=15)
+                response = requests.post(
+                    TOKEN_REFRESH_URL,
+                    data=payload,
+                    timeout=15)
                 if response.status_code == 200:
                     token_json = response.json()
                     new_refresh_token = token_json["refresh_token"]
@@ -134,8 +141,8 @@ def isAuth(db, dbCon):
 
                     return True
             except requests.exceptions.Timeout:
-                  print("Token Refresh Error: Request timed out.")
-                  return False
+                print("Token Refresh Error: Request timed out.")
+                return False
             except requests.exceptions.RequestException as e:
                 print(f"Token Refresh Error: Network error ({e}).")
                 return False
@@ -155,19 +162,19 @@ def authenicate(db, dbCon):
     CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET")
 
     client_config = {
-            "installed": {
-                "project_id":"gen-lang-client-0805862153",
-                "client_id": CLIENT_ID,
-                "client_secret": CLIENT_SECRET,
-                "auth_uri": "https://accounts.google.com/o/oauth2/auth",
-                "token_uri": "https://oauth2.googleapis.com/token",
-                "redirect_uris": ["http://localhost"],
-                "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
-             }
+        "installed": {
+            "project_id": "gen-lang-client-0805862153",
+            "client_id": CLIENT_ID,
+            "client_secret": CLIENT_SECRET,
+            "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+            "token_uri": "https://oauth2.googleapis.com/token",
+            "redirect_uris": ["http://localhost"],
+            "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
         }
+    }
 
     flow = InstalledAppFlow.from_client_config(
-            client_config, CALENDAR_SCOPES)
+        client_config, CALENDAR_SCOPES)
 
     try:
         creds = flow.run_local_server(port=0)
@@ -181,11 +188,11 @@ def authenicate(db, dbCon):
 
         return True
     except OSError:
-         print("Could not start local server for auth.")
-         return False
+        print("Could not start local server for auth.")
+        return False
     except Exception as e:
-         print(f"An unexpected error occurred during authentication: {e}")
-         return False
+        print(f"An unexpected error occurred during authentication: {e}")
+        return False
 
 
 def gemini_response(prompt):
@@ -198,7 +205,7 @@ def gemini_response(prompt):
     response = client.models.generate_content(
         model="gemini-2.0-flash",
         contents=f"{prompt}"
-     )
+    )
 
     return response
 
@@ -206,7 +213,7 @@ def gemini_response(prompt):
 def sanitize_gemini_response(response):
     cleaned_response_text = response.text.strip().strip('`').strip()
     if cleaned_response_text.lower().startswith("json"):
-         cleaned_response_text = cleaned_response_text[4:].strip()
+        cleaned_response_text = cleaned_response_text[4:].strip()
 
     print(f"Gemini Raw Response:\n{cleaned_response_text}")
     sanitized_response = json.loads(cleaned_response_text)
@@ -214,7 +221,7 @@ def sanitize_gemini_response(response):
     if not all(k in sanitized_response for k in ["summary", "start_time", "end_time", "description"]):
         raise ValueError("Gemini response missing required keys.")
     if not sanitized_response.get("summary") or not sanitized_response.get("start_time") or not sanitized_response.get("end_time"):
-         raise ValueError("Gemini response has empty essential values (summary, start_time, end_time).")
+        raise ValueError("Gemini response has empty essential values (summary, start_time, end_time).")
 
     try:
         dateutil_parser.isoparse(sanitized_response["start_time"])
@@ -231,7 +238,7 @@ def is_slot_free(service, start_time_iso, end_time_iso, calendar_id='primary'):
     try:
         # Use timezone from start_time string for the query
         tz_info = dateutil_parser.isoparse(start_time_iso).tzinfo
-        tz_str = str(tz_info) if tz_info else 'UTC' # Default to UTC if no tz info
+        tz_str = str(tz_info) if tz_info else 'UTC'  # Default to UTC if no tz info
 
         freebusy_query = {
             "timeMin": start_time_iso,
@@ -240,7 +247,9 @@ def is_slot_free(service, start_time_iso, end_time_iso, calendar_id='primary'):
             "items": [{"id": calendar_id}]
         }
         results = service.freebusy().query(body=freebusy_query).execute()
-        calendar_busy_times = results.get('calendars', {}).get(calendar_id, {}).get('busy', [])
+        calendar_busy_times = results.get('calendars', {}) \
+            .get(calendar_id, {}) \
+            .get('busy', [])
 
         if not calendar_busy_times:
             print("Slot is free.")
@@ -252,13 +261,17 @@ def is_slot_free(service, start_time_iso, end_time_iso, calendar_id='primary'):
             return False
 
     except HttpError as error:
-        print(f"An API error occurred during free/busy check: {error}", file=sys.stderr)
+        print(f"An API error occurred during free/busy check: {error}",
+              file=sys.stderr)
         return False
     except Exception as e:
-        print(f"An unexpected error occurred during free/busy check: {e}", file=sys.stderr)
+        print(f"An unexpected error occurred during free/busy check: {e}",
+              file=sys.stderr)
         return False
 
-def find_next_free_slot(service, original_start_dt, original_end_dt, calendar_id='primary'):
+
+def find_next_free_slot(
+        service, original_start_dt, original_end_dt, calendar_id='primary'):
     """Finds the next available time slot of the same duration."""
     duration = original_end_dt - original_start_dt
     # Start searching right after the originally proposed end time,
@@ -298,8 +311,9 @@ def add_task(db, task):
         start_dt = dateutil_parser.isoparse(start_iso)
         end_dt = dateutil_parser.isoparse(end_iso)
     except ValueError as e:
-         print(f"ERROR: Could not parse date/time from Gemini: {e}", file=sys.stderr)
-         return False
+        print(f"ERROR: Could not parse date/time from Gemini: {e}",
+              file=sys.stderr)
+        return False
 
     CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
     CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET")
@@ -323,13 +337,19 @@ def add_task(db, task):
     try:
         service = build('calendar', 'v3', credentials=credentials)
     except Exception as build_error:
-         print(f"Failed to build Google Calendar service client: {build_error}", file=sys.stderr)
-         sys.exit(1)
+        print(f"Failed to build Google Calendar service client: {build_error}",
+              file=sys.stderr)
+        sys.exit(1)
 
     if not is_slot_free(service, start_iso, end_iso, calendar_id):
-        new_start_iso, new_end_iso = find_next_free_slot(service, start_dt, end_dt, calendar_id)
+        new_start_iso, new_end_iso = find_next_free_slot(
+            service,
+            start_dt,
+            end_dt,
+            calendar_id)
         if not new_start_iso:
-            print("Failed to find an alternative slot. Event not added.", file=sys.stderr)
+            print("Failed to find an alternative slot. Event not added.",
+                  file=sys.stderr)
             return False
         start_iso = new_start_iso
         end_iso = new_end_iso
@@ -348,43 +368,35 @@ def add_task(db, task):
         return True
 
     except HttpError as error:
-        print(f"An API error occurred while adding event: {error}", file=sys.stderr)
+        print(f"A API error occurred while adding event: {error}",
+              file=sys.stderr)
 
         if hasattr(error, 'content'):
             try:
                 error_details = json.loads(error.content)
-                print(f"Error details: {json.dumps(error_details, indent=2)}", file=sys.stderr)
+                print(f"Error details: {json.dumps(error_details, indent=2)}",
+                      file=sys.stderr)
             except json.JSONDecodeError:
                 print(f"Error content: {error.content}", file=sys.stderr)
         return False
     except Exception as e:
-        print(f"An unexpected error occurred while adding event: {e}", file=sys.stderr)
+        print(f"An unexpected error occurred while adding event: {e}",
+              file=sys.stderr)
         return False
 
 
-def main():
-    load_dotenv()
+def my_taskie(task):
 
     # Create database engine
     db, dbCon = database()
 
-    parser = argparse.ArgumentParser(description='MyTaskie CLI')
-    parser.add_argument("-t", "--task", dest="task", help='Task description')
-    args = parser.parse_args()
-
-    if args.task:
-       if isAuth(db, dbCon):
-           add_task(db, args.task)
-       else:
-           print("User not authenticated. Begin authentication flow")
-           auth_flow_completed = authenicate(db, dbCon)
-           if auth_flow_completed:
-               add_task(db, args.task)
-           sys.exit(1)
+    if isAuth(db, dbCon):
+        add_task(db, task)
     else:
-        print("No task provided, read the README.md file for more information.")
-        sys.exit(1)
-
-
-if __name__ == "__main__":
-    main()
+        logger.info("User not authenticated. Begin authentication flow")
+        auth_flow_completed = authenicate(db, dbCon)
+        if auth_flow_completed:
+            add_task(db, task)
+            return "user authenticated and task added"
+        else:
+            return "Unable to authenticate user"
