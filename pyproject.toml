@@ -1,0 +1,16 @@
+[project]
+name = "mytaskie"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = [
+    "google-api-python-client>=2.166.0",
+    "google-auth-httplib2>=0.2.0",
+    "google-auth-oauthlib>=1.2.1",
+    "google-genai>=1.10.0",
+    "python-dateutil>=2.9.0.post0",
+    "python-dotenv>=1.1.0",
+    "pytz>=2025.2",
+    "tzlocal>=5.3.1",
+]
