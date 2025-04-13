@@ -4,7 +4,7 @@ from fastapi import Request
 from starlette.middleware.base import BaseHTTPMiddleware
 from collections import defaultdict
 from typing import Dict
-from logger import logger
+from taskie.logger import logger
 
 MAX_CALLS = 20
 

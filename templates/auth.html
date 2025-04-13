@@ -1,0 +1,34 @@
+{% extends "layout.html" %}
+
+{% block body %}
+<main>
+    <div class="calendar-container">
+        <h1>Connect to Google Calendar</h1>
+        <p class="explanation">
+            We need access to your Google Calendar to help you schedule
+            and manage your tasks more effectively. By connecting your
+            calendar, we can automatically schedule tasks based on your
+            availability and send you reminders for upcoming deadlines.
+        </p>
+
+        <a href="/get-access" class="calendar-btn">Grant Access</a>
+
+        <div class="benefits">
+            <h2>Benefits of connecting your calendar:</h2>
+            <ul>
+                <li>
+                    Automatically schedule tasks during your free time
+                </li>
+                <li>Receive timely reminders for task deadlines</li>
+                <li>
+                    Avoid scheduling conflicts with existing
+                    appointments
+                </li>
+                <li>
+                    Visualize your tasks alongside your calendar events
+                </li>
+            </ul>
+        </div>
+    </div>
+</main>
+{% endblock %}

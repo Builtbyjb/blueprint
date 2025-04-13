@@ -1,6 +1,5 @@
 const form = document.querySelector("#task-form");
 const textarea = document.querySelector("#task-textarea");
-const sendbtn = document.querySelector("#task-textarea-btn");
 const msg = document.querySelector("#msg");
 
 form.addEventListener("submit", async (event) => {
@@ -15,8 +14,13 @@ form.addEventListener("submit", async (event) => {
             },
             body: JSON.stringify({ task: task }),
         });
-        const data = await response.json();
-        msg.innerText = data.message;
+        if (response.status === 200) {
+            const data = await response.json();
+            alert(data.message);
+            textarea.value = "";
+        } else {
+            alert(data.error);
+        }
     } catch (error) {
         console.error(error);
     }
