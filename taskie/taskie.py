@@ -141,8 +141,8 @@ def my_taskie(redis_client, task, user_id):
     CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
     CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET")
 
-    access_token = redis_client.get(f"access_token:{user_id}").decode("utf-8")
-    refresh_token = redis_client.get(f"refresh_token:{user_id}").decode("utf-8")
+    access_token = redis_client.get(f"access_token:{user_id}")
+    refresh_token = redis_client.get(f"refresh_token:{user_id}")
 
     credentials = Credentials(
         token=access_token,
