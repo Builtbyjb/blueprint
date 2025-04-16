@@ -1,0 +1,36 @@
+@import "tailwindcss";
+
+@layer base {
+    :root {
+        --bg-color: #121212;
+        --card-bg: #1e1e1e;
+        --text-color: #e0e0e0;
+        --accent-color: #6c5ce7;
+        --border-color: #333333;
+    }
+
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+
+    body {
+        font-family: "Share Tech Mono", monospace;
+        background-color: var(--bg-color);
+        color: var(--text-color);
+    }
+
+    h1 {
+        font-family: "Electrolize", sans-serif;
+    }
+
+    textarea {
+        padding: 1rem;
+        color: var(--text-color);
+    }
+
+    a {
+        cursor: pointer;
+    }
+}

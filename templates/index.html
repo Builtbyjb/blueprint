@@ -1,24 +1,50 @@
 {% extends "layout.html" %}
-
+<!--  -->
 {% block body %}
-
-<main>
-    <div class="name-container">
-        <h1>Hi, {{ name }}</h1>
+<div class="mb-8">
+    <h1 class="mb-4 text-2xl">Hi, {{ name }}</h1>
+    <p>Manage your tasks efficiently</p>
+</div>
+<p id="msg" class="my-4"></p>
+<div class="pb-8">
+    <div>
+        <div class="py-6">
+            <form id="task-form" class="space-y-4">
+                <div class="w-[90%]">
+                    <textarea
+                        id="task-input"
+                        placeholder="Enter your task..."
+                        class="px-4 w-full py-3 bg-[#121212] border-2 border-[#333333] focus:outline-none focus:ring-1 focus:ring-primary-700/50 min-h-[100px]"
+                        required
+                    ></textarea>
+                </div>
+                <button type="submit" class="bg-[#6c5ce7] px-8 py-2">Add Task</button>
+            </form>
+            <!-- <p class="text-sm mt-4">
+                Tasks without a time frame will be added to the task list.
+                The tasks can then be staged again at a later date to add a time frame.
+                Which is then added to google calendar.
+            </p> -->
+        </div>
     </div>
-    <div class="task-container">
-        <h1>Enter task</h1>
-        <p id="msg"></p>
-        <form class="task-form" id="task-form">
-            <textarea
-                id="task-textarea"
-                name="task-textarea"
-                placeholder="Type your task here..."
-            ></textarea>
-            <button type="submit">Save Task</button>
-        </form>
+    <div>
+        <h2 class="text-2xl mb-4">Your Tasks</h2>
+        <div id="task-list">
+            {% for t in tasks %}
+            <div>
+                <p>{{ t.task }}</p>
+                <div class="flex gap-4">
+                    <button>Delete</button>
+                    <button>Stage</button>
+                    <button>Complete</button>
+                </div>
+            </div>
+            {% endfor %}
+        </div
     </div>
-</main>
-{% endblock %} {% block script %}
+</div>
+{% endblock %}
+<!--  -->
+{% block script %}
 <script type="module" src="/static/index.js"></script>
 {% endblock %}

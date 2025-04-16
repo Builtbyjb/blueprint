@@ -1,6 +1,8 @@
 import os
+from redis.client import Redis
 import requests
 from google_auth_oauthlib.flow import Flow
+from taskie.logger import logger
 
 TOKEN_INFO_URL = "https://www.googleapis.com/oauth2/v3/tokeninfo"
 TOKEN_REFRESH_URL = "https://oauth2.googleapis.com/token"
@@ -30,20 +32,18 @@ def auth_config() -> Flow:
     }
 
     config = Flow.from_client_config(client_config, scopes=SCOPES, redirect_uri=REDIRECT_URL)
-
     return config
 
 
 # Verify user
-def isAuth(redis_client, user_id) -> bool:
+def isAuth(redis_client: Redis, user_id: str) -> bool:
     CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
     CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET")
 
-    get_access_token = f"access_token:{user_id}"
-    access_token = redis_client.get(get_access_token)
+    access_token =  str(redis_client.get(f"access_token:{user_id}"))
 
     if access_token is None:
-        print("No access token found")
+        logger.info("No access token found")
         return False
 
     try:
@@ -57,8 +57,7 @@ def isAuth(redis_client, user_id) -> bool:
             return True
         else:
             # Try refreshing the token, is access token is not valid
-            get_refresh_token = f"refresh_token:{user_id}"
-            refresh_token = redis_client.get(get_refresh_token)
+            refresh_token = str(redis_client.get(f"refresh_token:{user_id}"))
             payload = {
                 'client_id': CLIENT_ID,
                 'client_secret': CLIENT_SECRET,
@@ -77,18 +76,17 @@ def isAuth(redis_client, user_id) -> bool:
                     v = redis_client.set(f"access_token:{user_id}", new_access_token)
                     if v is None:
                         return False
-
                     return True
             except requests.exceptions.Timeout:
-                print("Token Refresh Error: Request timed out.")
+                logger.error("Token Refresh Error: Request timed out.")
                 return False
             except requests.exceptions.RequestException as e:
-                print(f"Token Refresh Error: Network error ({e}).")
+                logger.error(f"Token Refresh Error: Network error ({e}).")
                 return False
     except requests.exceptions.Timeout:
-        print("Token Verification Error: Request timed out.")
+        logger.error("Token Verification Error: Request timed out.")
         return False
     except requests.exceptions.RequestException as e:
-        print(f"Token Verification Error: Network error ({e}).")
+        logger.error(f"Token Verification Error: Network error ({e}).")
         return False
     return True

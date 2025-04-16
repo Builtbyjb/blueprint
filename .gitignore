@@ -4,3 +4,4 @@ db.sqlite3
 .ropeproject
 log_file.log
 pyrightconfig.json
+node_modules

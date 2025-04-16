@@ -1,9 +1,10 @@
 from fastapi import FastAPI, Request, HTTPException, status
-from fastapi.responses import RedirectResponse
+from fastapi.responses import RedirectResponse, Response
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 from google.oauth2 import id_token
 import os
+from redis import Redis
 from taskie.auth import isAuth
 from taskie.middleware import RateLimiter
 from dotenv import load_dotenv
@@ -19,7 +20,7 @@ from datetime import datetime, timedelta, timezone
 
 load_dotenv()
 
-redis_client = get_redis_client(os.getenv("REDIS_URL"))
+redis_client: Redis = get_redis_client(os.getenv("REDIS_URL"))
 
 # Google oauth2 configuration
 oauth_config = auth_config()
@@ -31,14 +32,18 @@ templates = Jinja2Templates(directory="templates")
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 
+@app.get("/health")
+async def health_check():
+    return {"ping": "pong"}
+
+
 @app.get("/")
 async def Index(request: Request):
     session_id = request.cookies.get("session_id")
     if session_id is not None:
         user_id = redis_client.get(str(session_id))
-        print(user_id)
         name = redis_client.get(f"name:{user_id}")
-        if isAuth(redis_client, user_id):
+        if isAuth(redis_client, str(user_id)):
             return templates.TemplateResponse(
                 request=request,
                 name="index.html",
@@ -58,29 +63,32 @@ async def Index(request: Request):
         )
 
 
-@app.get("/health")
-async def health_check():
-    return {"ping": "pong"}
-
-
 @app.post("/api/v1/task")
-async def create_task(request: Request, task: Task):
+async def create_task(request: Request, task: Task) -> Response:
         session_id = request.cookies.get("session_id")
         if session_id is not None:
             try:
                 user_id = redis_client.get(str(session_id))
             except:
                 logger.error("Error getting or decoding user id")
-                return {"error": "Error getting or decoding user id"}
+                return Response(content="Internal server error", status_code=500)
 
-            my_taskie(redis_client, task.task, user_id)
-            return {"message": "Task created"}
+            # Authenticate user before added task
+            if isAuth(redis_client, str(user_id)):
+                is_added = my_taskie(redis_client, task.task, user_id)
+                if is_added:
+                    return Response(content="Task created", status_code=200)
+                else:
+                    return Response(content="Unable to create task", status_code=400)
+            else:
+                logger.info("Unauthorized user adding task")
+                return RedirectResponse(url="/", status_code=302)
         else:
-            return RedirectResponse("/")
+            return RedirectResponse(url="/", status_code=302)
 
 
 @app.get("/get-access")
-async def get_access_token(request: Request):
+async def get_access_token(request: Request) -> Response:
     # Generate the authorization URL
     authorization_url, state = oauth_config.authorization_url(
         access_type="offline",
@@ -106,7 +114,7 @@ async def get_access_token(request: Request):
 
 
 @app.get("/auth/google/callback")
-async def google_auth_callback(request: Request):
+async def google_auth_callback(request: Request) -> Response:
     # Verify state to prevent CSRF attacks
     state = request.query_params.get("state")
     stored_state = request.cookies.get("state")
@@ -137,10 +145,10 @@ async def google_auth_callback(request: Request):
         access_token = tokens.get("access_token")
         auth_id_token = tokens.get("id_token")
         if refresh_token is None:
-            return {"error":"No refresh token"}
+            return Response(content="No refresh token", status_code=400)
     except:
-        logger.fatal("Error getting authorization tokens")
-        return {"error": "Error getting authorization token"}
+        logger.error("Error getting authorization tokens")
+        return Response(content="Error getting authorization tokens", status_code=400)
 
     # Verify the token and get user info
     try:
@@ -150,8 +158,8 @@ async def google_auth_callback(request: Request):
             CLIENT_ID
         )
     except:
-        print("Error verifing token and getting user info")
-        return {"error": "Error verifing token"}
+        logger.error("Error verifing token and getting user info")
+        return Response(content="Internal server error", status_code=500)
 
     # Save session cookie
     session_id = generate_crypto_string()
@@ -169,8 +177,8 @@ async def google_auth_callback(request: Request):
          redis_client.set(f"access_token:{user_id}", access_token)
          redis_client.set(f"refresh_token:{user_id}", refresh_token)
     except:
-        print("Error setting session id and saving user info")
-        return {"error":"Error setting session id and saving user info"}
+        logger.error("Error setting session id and saving user info")
+        return Response(content="Internal server error", status_code=500)
 
     response = RedirectResponse(url="/", status_code=302)  # Use 302 instead of default 307
     expires = datetime.now(timezone.utc) + timedelta(days=20)

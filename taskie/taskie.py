@@ -18,7 +18,7 @@ TOKEN_INFO_URL = "https://www.googleapis.com/oauth2/v3/tokeninfo"
 TOKEN_REFRESH_URL = "https://oauth2.googleapis.com/token"
 
 
-def gemini_response(prompt):
+def gemini_response(prompt: str):
     GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
     client = genai.Client(
@@ -55,7 +55,7 @@ def sanitize_gemini_response(response):
     return sanitized_response
 
 
-def is_slot_free(service, start_time_iso, end_time_iso, calendar_id='primary'):
+def is_slot_free(service, start_time_iso, end_time_iso, calendar_id='primary') -> bool:
     """Checks if a time slot is free using the freebusy API."""
     print(f"Checking availability from {start_time_iso} to {end_time_iso}...")
     try:
@@ -69,7 +69,12 @@ def is_slot_free(service, start_time_iso, end_time_iso, calendar_id='primary'):
             "timeZone": tz_str,
             "items": [{"id": calendar_id}]
         }
-        results = service.freebusy().query(body=freebusy_query).execute()
+        try:
+            results = service.freebusy().query(body=freebusy_query).execute()
+        except Exception as e:
+            print(f"Error executing free busy query {e}")
+            return False
+
         calendar_busy_times = results.get('calendars', {}) \
             .get(calendar_id, {}) \
             .get('busy', [])
@@ -78,7 +83,6 @@ def is_slot_free(service, start_time_iso, end_time_iso, calendar_id='primary'):
             print("Slot is free.")
             return True
         else:
-            # Optional: Check if the busy interval *exactly* overlaps.
             # For simplicity, any overlap is considered busy here.
             print(f"Slot is busy. Conflicts: {calendar_busy_times}")
             return False
@@ -120,10 +124,11 @@ def find_next_free_slot(
 
 
 # Add task to google calender
-def my_taskie(redis_client, task, user_id):
+def my_taskie(redis_client, task, user_id) -> bool:
     prompt = generate_task_prompt(task)
     response = gemini_response(prompt)
     sanitized_response = sanitize_gemini_response(response)
+
     summary = sanitized_response['summary']
     start_iso = sanitized_response['start_time']
     end_iso = sanitized_response['end_time']
@@ -157,7 +162,7 @@ def my_taskie(redis_client, task, user_id):
     except Exception as build_error:
         print(f"Failed to build Google Calendar service client: {build_error}",
               file=sys.stderr)
-        sys.exit(1)
+        return False
 
     if not is_slot_free(service, start_iso, end_iso, calendar_id):
         new_start_iso, new_end_iso = find_next_free_slot(
