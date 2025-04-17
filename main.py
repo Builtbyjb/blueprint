@@ -9,7 +9,7 @@ from taskie.auth import isAuth
 from taskie.middleware import RateLimiter
 from dotenv import load_dotenv
 from taskie.taskie import my_taskie
-from taskie.database import get_redis_client
+from database.redis.redis import get_redis_client
 from taskie.utils import generate_crypto_string
 from taskie.auth import auth_config
 from google.auth.transport import requests as google_requests
@@ -17,10 +17,13 @@ from taskie.logger import logger
 from taskie.types import Task
 import requests
 from datetime import datetime, timedelta, timezone
+from database.sqlite.sqlite import sqlite
+from pydantic import BaseModel
 
 load_dotenv()
 
 redis_client: Redis = get_redis_client(os.getenv("REDIS_URL"))
+dbCur, dbCon = sqlite()
 
 # Google oauth2 configuration
 oauth_config = auth_config()
@@ -42,12 +45,17 @@ async def Index(request: Request):
     session_id = request.cookies.get("session_id")
     if session_id is not None:
         user_id = redis_client.get(str(session_id))
+        tasks = dbCur.execute("SELECT * FROM tasks WHERE user_id=?", (user_id,))
+        tasks.fetchall()
         name = redis_client.get(f"name:{user_id}")
         if isAuth(redis_client, str(user_id)):
             return templates.TemplateResponse(
                 request=request,
                 name="index.html",
-                context={"name":name}
+                context={
+                    "name":name,
+                    "tasks":tasks
+                }
             )
         else:
             return templates.TemplateResponse(
@@ -71,20 +79,69 @@ async def create_task(request: Request, task: Task) -> Response:
                 user_id = redis_client.get(str(session_id))
             except:
                 logger.error("Error getting or decoding user id")
-                return Response(content="Internal server error", status_code=500)
+                return Response(
+                    content={"error":"Internal server error"},
+                    status_code=500
+                )
 
             # Authenticate user before added task
             if isAuth(redis_client, str(user_id)):
-                is_added = my_taskie(redis_client, task.task, user_id)
+                is_added, task_id = my_taskie(redis_client, dbCur, dbCon, task.task, user_id)
                 if is_added:
-                    return Response(content="Task created", status_code=200)
+                    return Response(
+                        content={
+                            "message":"Task created",
+                            "taskID": task_id
+                        },
+                        status_code=200
+                    )
                 else:
-                    return Response(content="Unable to create task", status_code=400)
+                    return Response(
+                        content={"error":"Unable to create task"},
+                        status_code=400
+                    )
             else:
                 logger.info("Unauthorized user adding task")
                 return RedirectResponse(url="/", status_code=302)
         else:
             return RedirectResponse(url="/", status_code=302)
+
+
+@app.delete("/api/v1/tasks/{task_id}")
+async def delete_task(task_id: str) -> Response:
+    try:
+        dbCur.execute("DELETE FROM tasks WHERE id = ?", (task_id,))
+        dbCon.commit()
+        return Response(
+            content={"message":"Task deleted"},
+            status_code=200
+        )
+    except Exception as e:
+        logger.error(f"Error deleting task: {e}")
+        return Response(
+            content={"error":"Unable to delete task"},
+            status_code=500
+        )
+
+
+class TaskUpdate(BaseModel):
+    is_completed: bool
+
+@app.put("api/v1/tasks/{task_id}")
+async def update_task(task_id: int, task: TaskUpdate) -> Response:
+    try:
+        dbCur.execute("UPDATE tasks SET is_completed = ? WHERE id = ?", (task.is_completed, task_id))
+        dbCon.commit()
+        return Response(
+            content={"message":"Task updated"},
+            status_code=200
+        )
+    except Exception as e:
+        logger.error(f"Error updating task: {e}")
+        return Response(
+            content={"error":"Unable to update task"},
+            status_code=500
+        )
 
 
 @app.get("/get-access")

@@ -31,12 +31,15 @@
         <h2 class="text-2xl mb-4">Your Tasks</h2>
         <div id="task-list">
             {% for t in tasks %}
-            <div>
-                <p>{{ t.task }}</p>
+            <div id="task-div-{{ t.id }}" class="mb-4">
+                <p
+                    id="task-{{ t.id }}"
+                    class="{% if t.is_completed %} line-through {% endif %}"
+                >{{ t.task }}</p>
                 <div class="flex gap-4">
-                    <button>Delete</button>
-                    <button>Stage</button>
-                    <button>Complete</button>
+                    <a id="{{ t.id }}" class="delete-btn underline text-red-500 text-sm">Delete</a>
+                    <a id="{{ t.id }}" class="stage-btn underline text-blue-500 text-sm">Stage</a>
+                    <a id="{{ t.id }}" class="complete-btn underline text-green-500 text-sm">Completed</a>
                 </div>
             </div>
             {% endfor %}
