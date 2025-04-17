@@ -8,4 +8,4 @@ ngrok:
 	ngrok http --url=admittedly-adequate-scorpion.ngrok-free.app 3000
 
 env:
-    export UV_PROJECT_ENVIRONMENT=~/documents/.mytaskie
+	export UV_PROJECT_ENVIRONMENT=~/documents/.mytaskie

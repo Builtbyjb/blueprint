@@ -16,10 +16,10 @@ document.addEventListener("DOMContentLoaded", () => {
                 },
                 body: JSON.stringify({ task: task }),
             });
+            const data = await response.json();
             if (response.status === 200) {
-                const data = await response.json();
                 if (data.taskID !== "") {
-                    const newTask = generateTask(task, id);
+                    const newTask = generateTask(task, data.taskID);
                     taskList.appendChild(newTask);
                 }
                 msg.textContent = data.message;
@@ -39,13 +39,14 @@ document.addEventListener("DOMContentLoaded", () => {
             event.preventDefault();
             const id = event.target.id;
             try {
-                const response = await fetch(`/tasks/${id}`, {
+                const response = await fetch(`/api/v1/tasks/${id}`, {
                     method: "DELETE",
                 });
                 const data = await response.json();
                 if (response.status === 200) {
                     document.querySelector(`#task-div-${id}`).style.display =
                         "none";
+                    msg.textContent = data.message;
                 } else {
                     msg.textContent = data.error;
                 }
@@ -80,6 +81,7 @@ document.addEventListener("DOMContentLoaded", () => {
             console.log("Staging button clicked");
             const id = event.target.id;
             console.log(id);
+            // TODO: figure out to handle staging
             // Send set a task is staging value to true
             // Select the div with the id and add the staging style
         }

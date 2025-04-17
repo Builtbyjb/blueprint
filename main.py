@@ -1,5 +1,5 @@
 from fastapi import FastAPI, Request, HTTPException, status
-from fastapi.responses import RedirectResponse, Response
+from fastapi.responses import RedirectResponse, Response, JSONResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 from google.oauth2 import id_token
@@ -19,6 +19,7 @@ import requests
 from datetime import datetime, timedelta, timezone
 from database.sqlite.sqlite import sqlite
 from pydantic import BaseModel
+from typing import Union
 
 load_dotenv()
 
@@ -44,9 +45,16 @@ async def health_check():
 async def Index(request: Request):
     session_id = request.cookies.get("session_id")
     if session_id is not None:
-        user_id = redis_client.get(str(session_id))
-        tasks = dbCur.execute("SELECT * FROM tasks WHERE user_id=?", (user_id,))
-        tasks.fetchall()
+        user_id = redis_client.get(str(session_id)) # Potential failure point
+        tasks= []
+        try:
+            # TODO: add a task schema to sqlite so i want have to use index to idenitfy table values
+            t = dbCur.execute("SELECT * FROM tasks WHERE user_id=?", (user_id,))
+            tasks = t.fetchall()
+        except Exception as e:
+            logger.error(f"Error fetching tasks: {e}")
+            return Response(content="Internal server error", status_code=500)
+
         name = redis_client.get(f"name:{user_id}")
         if isAuth(redis_client, str(user_id)):
             return templates.TemplateResponse(
@@ -71,54 +79,60 @@ async def Index(request: Request):
         )
 
 
-@app.post("/api/v1/task")
-async def create_task(request: Request, task: Task) -> Response:
-        session_id = request.cookies.get("session_id")
-        if session_id is not None:
-            try:
-                user_id = redis_client.get(str(session_id))
-            except:
-                logger.error("Error getting or decoding user id")
-                return Response(
-                    content={"error":"Internal server error"},
-                    status_code=500
+@app.post("/api/v1/task", response_model=None)
+async def create_task(request: Request, task: Task) -> Union[JSONResponse, RedirectResponse]:
+    """
+        Creates a new task. Adds the task to google calendar or a database,
+        depending on if the tasks contains a time reference or not.
+    """
+    session_id = request.cookies.get("session_id")
+    if session_id is not None:
+        try:
+            user_id = redis_client.get(str(session_id))
+        except:
+            logger.error("Error getting or decoding user id")
+            return JSONResponse(
+                content={"error":"Internal server error"},
+                status_code=500
+            )
+        # Authenticate user before added task
+        if isAuth(redis_client, str(user_id)):
+            is_added, task_id = my_taskie(redis_client, dbCur, dbCon, task.task, user_id)
+            if is_added:
+                return JSONResponse(
+                    content={
+                        "message":"Task created",
+                        "taskID": task_id
+                    },
+                    status_code=200
                 )
-
-            # Authenticate user before added task
-            if isAuth(redis_client, str(user_id)):
-                is_added, task_id = my_taskie(redis_client, dbCur, dbCon, task.task, user_id)
-                if is_added:
-                    return Response(
-                        content={
-                            "message":"Task created",
-                            "taskID": task_id
-                        },
-                        status_code=200
-                    )
-                else:
-                    return Response(
-                        content={"error":"Unable to create task"},
-                        status_code=400
-                    )
             else:
-                logger.info("Unauthorized user adding task")
-                return RedirectResponse(url="/", status_code=302)
+                return JSONResponse(
+                    content={"error":"Unable to create task"},
+                    status_code=400
+                )
         else:
+            logger.info("Unauthorized user adding task")
             return RedirectResponse(url="/", status_code=302)
+    else:
+        return RedirectResponse(url="/", status_code=302)
 
 
 @app.delete("/api/v1/tasks/{task_id}")
-async def delete_task(task_id: str) -> Response:
+async def delete_task(task_id: str) -> JSONResponse:
+    """
+        Delete tasks from the database
+    """
     try:
         dbCur.execute("DELETE FROM tasks WHERE id = ?", (task_id,))
         dbCon.commit()
-        return Response(
+        return JSONResponse(
             content={"message":"Task deleted"},
             status_code=200
         )
     except Exception as e:
         logger.error(f"Error deleting task: {e}")
-        return Response(
+        return JSONResponse(
             content={"error":"Unable to delete task"},
             status_code=500
         )
@@ -128,17 +142,20 @@ class TaskUpdate(BaseModel):
     is_completed: bool
 
 @app.put("api/v1/tasks/{task_id}")
-async def update_task(task_id: int, task: TaskUpdate) -> Response:
+async def update_task(task_id: int, task: TaskUpdate) -> JSONResponse:
+    """
+        Updates a task added to database, "is_completed" value.
+    """
     try:
         dbCur.execute("UPDATE tasks SET is_completed = ? WHERE id = ?", (task.is_completed, task_id))
         dbCon.commit()
-        return Response(
+        return JSONResponse(
             content={"message":"Task updated"},
             status_code=200
         )
     except Exception as e:
         logger.error(f"Error updating task: {e}")
-        return Response(
+        return JSONResponse(
             content={"error":"Unable to update task"},
             status_code=500
         )
@@ -146,6 +163,10 @@ async def update_task(task_id: int, task: TaskUpdate) -> Response:
 
 @app.get("/get-access")
 async def get_access_token(request: Request) -> Response:
+    """
+        Starts google oauth flow to grant "My Taskie" access to
+        the users google calendar service.
+    """
     # Generate the authorization URL
     authorization_url, state = oauth_config.authorization_url(
         access_type="offline",
@@ -172,6 +193,10 @@ async def get_access_token(request: Request) -> Response:
 
 @app.get("/auth/google/callback")
 async def google_auth_callback(request: Request) -> Response:
+    """
+        Handles google callbacks. Get access token, refresh token and user information
+        from google and saves them in a redis database
+    """
     # Verify state to prevent CSRF attacks
     state = request.query_params.get("state")
     stored_state = request.cookies.get("state")
@@ -248,6 +273,5 @@ async def google_auth_callback(request: Request) -> Response:
         httponly=True,
         samesite="lax"
    )
-
     # Redirect to home page
     return response
