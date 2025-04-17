@@ -1,9 +1,8 @@
 {% extends "layout.html" %}
 <!--  -->
 {% block body %}
-<div class="mb-8">
+<div class="mb-4">
     <h1 class="mb-4 text-2xl">Hi, {{ name }}</h1>
-    <p>Manage your tasks efficiently</p>
 </div>
 <p id="msg" class="my-4"></p>
 <div class="pb-8">
@@ -31,12 +30,15 @@
         <h2 class="text-2xl mb-4">Your Tasks</h2>
         <div id="task-list">
             {% for t in tasks %}
-            <div>
-                <p>{{ t.task }}</p>
+            <div id="task-div-{{ t[0] }}" class="mb-4">
+                <p
+                    id="task-{{ t[0] }}"
+                    class="{% if t[3] %} line-through {% endif %}"
+                >{{ t[2] }}</p>
                 <div class="flex gap-4">
-                    <button>Delete</button>
-                    <button>Stage</button>
-                    <button>Complete</button>
+                    <a id="{{ t[0] }}" class="delete-btn underline text-red-500 text-sm">Delete</a>
+                    <a id="{{ t[0] }}" class="stage-btn underline text-blue-500 text-sm">Stage</a>
+                    <a id="{{ t[0] }}" class="complete-btn underline text-green-500 text-sm">Completed</a>
                 </div>
             </div>
             {% endfor %}

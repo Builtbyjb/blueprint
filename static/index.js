@@ -16,13 +16,14 @@ document.addEventListener("DOMContentLoaded", () => {
                 },
                 body: JSON.stringify({ task: task }),
             });
+            const data = await response.json();
             if (response.status === 200) {
-                const data = await response.json();
-                msg.textContent = data.content;
+                if (data.taskID !== "") {
+                    const newTask = generateTask(task, data.taskID);
+                    taskList.appendChild(newTask);
+                }
+                msg.textContent = data.message;
                 textarea.value = "";
-                // const id = generateRandomString();
-                // const newTask = generateTask(task, id);
-                // taskList.appendChild(newTask);
             } else {
                 msg.textContent = data.error;
             }
@@ -32,27 +33,55 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     // Add event listeners to buttons
-    document.addEventListener("click", (event) => {
+    document.addEventListener("click", async (event) => {
         if (event.target.classList.contains("delete-btn")) {
+            // Delete tasks
             event.preventDefault();
-            console.log("Delete button clicked");
             const id = event.target.id;
-            console.log(id);
-            // Send delete request to the backend
-            // Select div with the id and set the display property to none
-            document.querySelector(`#task-div-${id}`).style.display = "none";
+            try {
+                const response = await fetch(`/api/v1/tasks/${id}`, {
+                    method: "DELETE",
+                });
+                const data = await response.json();
+                if (response.status === 200) {
+                    document.querySelector(`#task-div-${id}`).style.display =
+                        "none";
+                    msg.textContent = data.message;
+                } else {
+                    msg.textContent = data.error;
+                }
+            } catch (error) {
+                console.error(error);
+            }
         } else if (event.target.classList.contains("complete-btn")) {
+            // Mark tasks as completed
             event.preventDefault();
-            console.log("Complete button clicked");
             const id = event.target.id;
-            console.log(id);
-            // Send set a task is completed value to true
-            // Select the div with the id and add the completed style
+            try {
+                const response = await fetch(`/api/v1/tasks/${id}`, {
+                    method: "PUT",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({ is_completed: true }),
+                });
+                const data = await response.json();
+                if (response.status === 200) {
+                    document.querySelector(`#task-${id}`).style.textDecoration =
+                        "line-through";
+                } else {
+                    msg.textContent = data.error;
+                }
+            } catch (error) {
+                console.error(error);
+            }
         } else if (event.target.classList.contains("stage-btn")) {
+            // Add task to the staging area
             event.preventDefault();
             console.log("Staging button clicked");
             const id = event.target.id;
             console.log(id);
+            // TODO: figure out to handle staging
             // Send set a task is staging value to true
             // Select the div with the id and add the staging style
         }
@@ -74,9 +103,9 @@ function generateTask(task, id) {
     return div;
 }
 
-function generateRandomString() {
-    const length = 6;
-    return Math.random()
-        .toString(36)
-        .slice(2, length + 2);
-}
+// function generateRandomString() {
+//     const length = 6;
+//     return Math.random()
+//         .toString(36)
+//         .slice(2, length + 2);
+// }

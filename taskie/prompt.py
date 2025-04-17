@@ -37,7 +37,14 @@ def generate_task_prompt(task):
     }}
 
     If the task is ambiguous about time, make a reasonable guess (e.g., 'meeting this afternoon' could be 3 PM today).
-    If no time information is present *at all*, return an error indicator.
+    If the task contains a number without a time reference like (AM, PM, hours, minutes, etc.), return:
+    {{
+        "info": "Task contains a number without a time reference",
+    }}.
+    If no time information is present return:
+    {{
+        "info": "Task was not assigned a time frame",
+    }}.
     Ensure the start and end times are valid ISO 8601 strings including timezone offset derived from the context or
     the user's explicit mention.
     """

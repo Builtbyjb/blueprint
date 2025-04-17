@@ -13,8 +13,8 @@
     --spacing: 0.25rem;
     --text-sm: 0.875rem;
     --text-sm--line-height: calc(1.25 / 0.875);
-    --text-lg: 1.125rem;
-    --text-lg--line-height: calc(1.75 / 1.125);
+    --text-xl: 1.25rem;
+    --text-xl--line-height: calc(1.75 / 1.25);
     --text-2xl: 1.5rem;
     --text-2xl--line-height: calc(2 / 1.5);
     --default-font-family: var(--font-sans);
@@ -185,6 +185,9 @@
   .my-4 {
     margin-block: calc(var(--spacing) * 4);
   }
+  .my-8 {
+    margin-block: calc(var(--spacing) * 8);
+  }
   .mt-4 {
     margin-top: calc(var(--spacing) * 4);
   }
@@ -208,6 +211,9 @@
   }
   .flex {
     display: flex;
+  }
+  .table {
+    display: table;
   }
   .min-h-\[78vh\] {
     min-height: 78vh;
@@ -273,6 +279,10 @@
     font-size: var(--text-sm);
     line-height: var(--tw-leading, var(--text-sm--line-height));
   }
+  .text-xl {
+    font-size: var(--text-xl);
+    line-height: var(--tw-leading, var(--text-xl--line-height));
+  }
   .text-blue-500 {
     color: var(--color-blue-500);
   }
@@ -281,6 +291,9 @@
   }
   .text-red-500 {
     color: var(--color-red-500);
+  }
+  .line-through {
+    text-decoration-line: line-through;
   }
   .underline {
     text-decoration-line: underline;
