@@ -10,6 +10,7 @@
     --color-red-500: oklch(63.7% 0.237 25.331);
     --color-green-500: oklch(72.3% 0.219 149.579);
     --color-blue-500: oklch(62.3% 0.214 259.815);
+    --color-neutral-900: oklch(20.5% 0 0);
     --spacing: 0.25rem;
     --text-sm: 0.875rem;
     --text-sm--line-height: calc(1.25 / 0.875);
@@ -17,6 +18,7 @@
     --text-xl--line-height: calc(1.75 / 1.25);
     --text-2xl: 1.5rem;
     --text-2xl--line-height: calc(2 / 1.5);
+    --font-weight-bold: 700;
     --default-font-family: var(--font-sans);
     --default-mono-font-family: var(--font-mono);
   }
@@ -250,6 +252,9 @@
   .bg-\[\#121212\] {
     background-color: #121212;
   }
+  .bg-\[\#C3C2C2\] {
+    background-color: #C3C2C2;
+  }
   .p-2 {
     padding: calc(var(--spacing) * 2);
   }
@@ -283,11 +288,18 @@
     font-size: var(--text-xl);
     line-height: var(--tw-leading, var(--text-xl--line-height));
   }
+  .font-bold {
+    --tw-font-weight: var(--font-weight-bold);
+    font-weight: var(--font-weight-bold);
+  }
   .text-blue-500 {
     color: var(--color-blue-500);
   }
   .text-green-500 {
     color: var(--color-green-500);
+  }
+  .text-neutral-900 {
+    color: var(--color-neutral-900);
   }
   .text-red-500 {
     color: var(--color-red-500);
@@ -313,7 +325,7 @@
 }
 @layer base {
   :root {
-    --bg-color: #121212;
+    --bg-color: #131515;
     --card-bg: #1e1e1e;
     --text-color: #e0e0e0;
     --accent-color: #6c5ce7;
@@ -349,6 +361,10 @@
   syntax: "*";
   inherits: false;
   initial-value: solid;
+}
+@property --tw-font-weight {
+  syntax: "*";
+  inherits: false;
 }
 @property --tw-shadow {
   syntax: "*";
@@ -420,6 +436,7 @@
     *, ::before, ::after, ::backdrop {
       --tw-space-y-reverse: 0;
       --tw-border-style: solid;
+      --tw-font-weight: initial;
       --tw-shadow: 0 0 #0000;
       --tw-shadow-color: initial;
       --tw-shadow-alpha: 100%;

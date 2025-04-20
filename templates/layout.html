@@ -1,25 +1,27 @@
 <!doctype html>
 <html lang="en">
-    <head>
-        <meta charset="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <meta http-equiv="X-UA-Compatible" content="ie=edge" />
-        <link href="/static/style.css" rel="stylesheet" />
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-        <link
-            href="https://fonts.googleapis.com/css2?family=Electrolize&family=Share+Tech+Mono&display=swap"
-            rel="stylesheet"
-        />
-        <title>My Taskie</title>
-    </head>
-    <body>
-        <main class="mt-8 min-h-[78vh] w-[90%] mx-auto">
-            {% block body %}{% endblock %}
-        </main>
-        <footer class="fixed bottom-0 left-0 bg-[#6c5ce7] p-2">
-            <p class="text-sm">My Taskie &copy; 2025</p>
-        </footer>
-        <div>{% block script %}{% endblock %}</div>
-    </body>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+    <link href="/static/style.css" rel="stylesheet" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Electrolize&family=Share+Tech+Mono&display=swap"
+      rel="stylesheet"
+    />
+    <title>My Taskie</title>
+  </head>
+  <body>
+    <main class="mt-8 min-h-[78vh] w-[90%] mx-auto">
+      {% block body %}{% endblock %}
+    </main>
+    <footer
+      class="fixed bottom-0 left-0 bg-[#C3C2C2] font-bold p-2 text-neutral-900"
+    >
+      <p class="text-sm">My Taskie &copy; 2025</p>
+    </footer>
+    <div>{% block script %}{% endblock %}</div>
+  </body>
 </html>
