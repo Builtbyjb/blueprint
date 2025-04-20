@@ -139,139 +139,139 @@ async def delete_task(task_id: str) -> JSONResponse:
 
 
 class TaskUpdate(BaseModel):
-    is_completed: bool
+    is_completed: int
 
-@app.put("api/v1/tasks/{task_id}")
-async def update_task(task_id: int, task: TaskUpdate) -> JSONResponse:
-    """
-        Updates a task added to database, "is_completed" value.
-    """
-    try:
-        dbCur.execute("UPDATE tasks SET is_completed = ? WHERE id = ?", (task.is_completed, task_id))
-        dbCon.commit()
-        return JSONResponse(
-            content={"message":"Task updated"},
-            status_code=200
-        )
-    except Exception as e:
-        logger.error(f"Error updating task: {e}")
-        return JSONResponse(
-            content={"error":"Unable to update task"},
-            status_code=500
-        )
+@app.put("/api/v1/tasks/{task_id}")
+async def update_task(task_id: str, task: TaskUpdate) -> JSONResponse:
+  """
+    Updates a task added to database, "is_completed" value.
+  """
+  try:
+    dbCur.execute("UPDATE tasks SET is_completed = ? WHERE id = ?", (task.is_completed, task_id))
+    dbCon.commit()
+    return JSONResponse(
+      content={"message":"Task updated"},
+      status_code=200
+    )
+  except Exception as e:
+    print(f"Error updating task: {e}")
+    return JSONResponse(
+      content={"error":"Unable to update task"},
+      status_code=500
+    )
 
 
 @app.get("/get-access")
 async def get_access_token(request: Request) -> Response:
-    """
-        Starts google oauth flow to grant "My Taskie" access to
-        the users google calendar service.
-    """
-    # Generate the authorization URL
-    authorization_url, state = oauth_config.authorization_url(
-        access_type="offline",
-        include_granted_scopes="true",
-        prompt="consent"
-    )
+  """
+    Starts google oauth flow to grant "My Taskie" access to
+    the users google calendar service.
+  """
+  # Generate the authorization URL
+  authorization_url, state = oauth_config.authorization_url(
+    access_type="offline",
+    include_granted_scopes="true",
+    prompt="consent"
+  )
 
-    response =  RedirectResponse(url=authorization_url, status_code=302)
-    # Store the state in the session for CSRF protection
-    expires = datetime.now(timezone.utc) + timedelta(minutes=5)
-    response.set_cookie(
-        key="state",
-        value=state,
-        expires=expires,
-        path="/",
-        secure=True,
-        httponly=True,
-        samesite="lax"
-   )
+  response =  RedirectResponse(url=authorization_url, status_code=302)
+  # Store the state in the session for CSRF protection
+  expires = datetime.now(timezone.utc) + timedelta(minutes=5)
+  response.set_cookie(
+    key="state",
+    value=state,
+    expires=expires,
+    path="/",
+    secure=True,
+    httponly=True,
+    samesite="lax"
+  )
 
-    # Redirect to Google's authorization page
-    return response
+  # Redirect to Google's authorization page
+  return response
 
 
 @app.get("/auth/google/callback")
 async def google_auth_callback(request: Request) -> Response:
-    """
-        Handles google callbacks. Get access token, refresh token and user information
-        from google and saves them in a redis database
-    """
-    # Verify state to prevent CSRF attacks
-    state = request.query_params.get("state")
-    stored_state = request.cookies.get("state")
+  """
+    Handles google callbacks. Get access token, refresh token and user information
+    from google and saves them in a redis database
+  """
+  # Verify state to prevent CSRF attacks
+  state = request.query_params.get("state")
+  stored_state = request.cookies.get("state")
 
-    CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
-    TOKEN_URL = "https://oauth2.googleapis.com/token"
+  CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
+  TOKEN_URL = "https://oauth2.googleapis.com/token"
 
-    if state is None or state != stored_state:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid state parameter. Possible CSRF attack."
-        )
+  if state is None or state != stored_state:
+    raise HTTPException(
+      status_code=status.HTTP_401_UNAUTHORIZED,
+      detail="Invalid state parameter. Possible CSRF attack."
+    )
 
-    # Exchange the authorization code for tokens
-    try:
-        code = request.query_params.get("code")
-        payload = {
-            "code": code,
-            "client_id": os.getenv("GOOGLE_CLIENT_ID"),
-            "client_secret": os.getenv("GOOGLE_CLIENT_SECRET"),
-            "redirect_uri": os.getenv("GOOGLE_REDIRECT_URL"),
-            "grant_type": "authorization_code"
-        }
+  # Exchange the authorization code for tokens
+  try:
+    code = request.query_params.get("code")
+    payload = {
+      "code": code,
+      "client_id": os.getenv("GOOGLE_CLIENT_ID"),
+      "client_secret": os.getenv("GOOGLE_CLIENT_SECRET"),
+      "redirect_uri": os.getenv("GOOGLE_REDIRECT_URL"),
+      "grant_type": "authorization_code"
+    }
 
-        token_response = requests.post(TOKEN_URL, data=payload)
-        tokens = token_response.json()
-        refresh_token = tokens.get("refresh_token")
-        access_token = tokens.get("access_token")
-        auth_id_token = tokens.get("id_token")
-        if refresh_token is None:
-            return Response(content="No refresh token", status_code=400)
-    except:
-        logger.error("Error getting authorization tokens")
-        return Response(content="Error getting authorization tokens", status_code=400)
+    token_response = requests.post(TOKEN_URL, data=payload)
+    tokens = token_response.json()
+    refresh_token = tokens.get("refresh_token")
+    access_token = tokens.get("access_token")
+    auth_id_token = tokens.get("id_token")
+    if refresh_token is None:
+      return Response(content="No refresh token", status_code=400)
+  except:
+    logger.error("Error getting authorization tokens")
+    return Response(content="Error getting authorization tokens", status_code=400)
 
-    # Verify the token and get user info
-    try:
-        user_info = id_token.verify_oauth2_token(
-            auth_id_token,
-            google_requests.Request(),
-            CLIENT_ID
-        )
-    except:
-        logger.error("Error verifing token and getting user info")
-        return Response(content="Internal server error", status_code=500)
+  # Verify the token and get user info
+  try:
+    user_info = id_token.verify_oauth2_token(
+      auth_id_token,
+      google_requests.Request(),
+      CLIENT_ID
+    )
+  except:
+    logger.error("Error verifing token and getting user info")
+    return Response(content="Internal server error", status_code=500)
 
-    # Save session cookie
-    session_id = generate_crypto_string()
+  # Save session cookie
+  session_id = generate_crypto_string()
 
-    email = str(user_info.get("email"))
-    name =  str(user_info.get("given_name"))
-    user_id = str(user_info.get("sub"))
+  email = str(user_info.get("email"))
+  name =  str(user_info.get("given_name"))
+  user_id = str(user_info.get("sub"))
 
-     # Save user info
-    try:
-         redis_client.set(session_id, user_id, timedelta(days=20))
-         redis_client.set(f"user_id:{user_id}", user_id)
-         redis_client.set(f"name:{user_id}", name)
-         redis_client.set(f"email:{user_id}", email)
-         redis_client.set(f"access_token:{user_id}", access_token)
-         redis_client.set(f"refresh_token:{user_id}", refresh_token)
-    except:
-        logger.error("Error setting session id and saving user info")
-        return Response(content="Internal server error", status_code=500)
+   # Save user info
+  try:
+    redis_client.set(session_id, user_id, timedelta(days=20))
+    redis_client.set(f"user_id:{user_id}", user_id)
+    redis_client.set(f"name:{user_id}", name)
+    redis_client.set(f"email:{user_id}", email)
+    redis_client.set(f"access_token:{user_id}", access_token)
+    redis_client.set(f"refresh_token:{user_id}", refresh_token)
+  except:
+    logger.error("Error setting session id and saving user info")
+    return Response(content="Internal server error", status_code=500)
 
-    response = RedirectResponse(url="/", status_code=302)  # Use 302 instead of default 307
-    expires = datetime.now(timezone.utc) + timedelta(days=20)
-    response.set_cookie(
-        key="session_id",
-        value=session_id,
-        expires=expires,
-        path="/",
-        secure=True,
-        httponly=True,
-        samesite="lax"
-   )
-    # Redirect to home page
-    return response
+  response = RedirectResponse(url="/", status_code=302)  # Use 302 instead of default 307
+  expires = datetime.now(timezone.utc) + timedelta(days=20)
+  response.set_cookie(
+    key="session_id",
+    value=session_id,
+    expires=expires,
+    path="/",
+    secure=True,
+    httponly=True,
+    samesite="lax"
+  )
+  # Redirect to home page
+  return response
