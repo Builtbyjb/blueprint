@@ -1,4 +1,4 @@
-# mytaskie
+# Blueprint
 
 A task management app built on google calendar.
 
