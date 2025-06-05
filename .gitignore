@@ -6,3 +6,6 @@ log_file.log
 pyrightconfig.json
 node_modules
 __pycache__
+.vscode
+.zed
+.mypy_cache

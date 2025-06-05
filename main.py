@@ -5,16 +5,16 @@ from fastapi.staticfiles import StaticFiles
 from google.oauth2 import id_token
 import os
 from redis import Redis
-from taskie.auth import isAuth
-from taskie.middleware import RateLimiter
+from blueprint.auth import isAuth
+from blueprint.middleware import RateLimiter
 from dotenv import load_dotenv
-from taskie.taskie import my_taskie
+from blueprint.blueprint import blueprint
 from database.redis.redis import get_redis_client
-from taskie.utils import generate_crypto_string
-from taskie.auth import auth_config
+from blueprint.utils import generate_crypto_string
+from blueprint.auth import auth_config
 from google.auth.transport import requests as google_requests
-from taskie.logger import logger
-from taskie.types import Task
+from blueprint.logger import log
+from blueprint.types import Task
 import requests
 from datetime import datetime, timedelta, timezone
 from database.sqlite.sqlite import sqlite
@@ -37,135 +37,99 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 
 
 @app.get("/health")
-async def health_check():
-    return {"ping": "pong"}
+async def health_check(): return {"ping": "pong"}
 
 
 @app.get("/")
 async def Index(request: Request):
-    session_id = request.cookies.get("session_id")
-    if session_id is not None:
-        user_id = redis_client.get(str(session_id)) # Potential failure point
-        tasks= []
-        try:
-            # TODO: add a task schema to sqlite so i want have to use index to idenitfy table values
-            t = dbCur.execute("SELECT * FROM tasks WHERE user_id=?", (user_id,))
-            tasks = t.fetchall()
-        except Exception as e:
-            logger.error(f"Error fetching tasks: {e}")
-            return Response(content="Internal server error", status_code=500)
+  session_id = request.cookies.get("session_id")
+  if session_id is not None:
+    user_id = redis_client.get(str(session_id)) # Potential failure point
+    tasks= []
+    try:
+      # TODO: add a task schema to sqlite so i want have to use index to identify table values
+      t = dbCur.execute("SELECT * FROM tasks WHERE user_id=?", (user_id,))
+      tasks = t.fetchall()
+    except Exception as e:
+      log.error(f"Error fetching tasks: {e}")
+      return Response(content="Internal server error", status_code=500)
 
-        name = redis_client.get(f"name:{user_id}")
-        if isAuth(redis_client, str(user_id)):
-            return templates.TemplateResponse(
-                request=request,
-                name="index.html",
-                context={
-                    "name":name,
-                    "tasks":tasks
-                }
-            )
-        else:
-            return templates.TemplateResponse(
-                request=request,
-                name="auth.html",
-                context={}
-            )
+    name = redis_client.get(f"name:{user_id}")
+    if isAuth(redis_client, str(user_id)):
+      return templates.TemplateResponse(
+        request=request,
+        name="index.html",
+        context={ "name":name, "tasks":tasks }
+      )
     else:
-        return templates.TemplateResponse(
-            request=request,
-            name="auth.html",
-            context={}
-        )
+      return templates.TemplateResponse( request=request, name="auth.html", context={})
+  else:
+    return templates.TemplateResponse( request=request, name="auth.html", context={})
 
 
 @app.post("/api/v1/task", response_model=None)
 async def create_task(request: Request, task: Task) -> Union[JSONResponse, RedirectResponse]:
-    """
-        Creates a new task. Adds the task to google calendar or a database,
-        depending on if the tasks contains a time reference or not.
-    """
-    session_id = request.cookies.get("session_id")
-    if session_id is not None:
-        try:
-            user_id = redis_client.get(str(session_id))
-        except:
-            logger.error("Error getting or decoding user id")
-            return JSONResponse(
-                content={"error":"Internal server error"},
-                status_code=500
-            )
-        # Authenticate user before added task
-        if isAuth(redis_client, str(user_id)):
-            is_added, task_id = my_taskie(redis_client, dbCur, dbCon, task.task, user_id)
-            if is_added:
-                return JSONResponse(
-                    content={
-                        "message":"Task created",
-                        "taskID": task_id
-                    },
-                    status_code=200
-                )
-            else:
-                return JSONResponse(
-                    content={"error":"Unable to create task"},
-                    status_code=400
-                )
-        else:
-            logger.info("Unauthorized user adding task")
-            return RedirectResponse(url="/", status_code=302)
+  """
+  Creates a new task. Adds the task to google calendar or a database,
+  depending on if the tasks contains a time reference or not.
+  """
+  session_id = request.cookies.get("session_id")
+  if session_id is not None:
+    try: user_id = redis_client.get(str(session_id))
+    except:
+      log.error("Error getting or decoding user id")
+      return JSONResponse( content={"error":"Internal server error"}, status_code=500)
+    # Authenticate user before added task
+    if isAuth(redis_client, str(user_id)):
+      is_added, task_id = blueprint(redis_client, dbCur, dbCon, task.task, user_id)
+      if is_added:
+        return JSONResponse(
+          content={ "message":"Task created", "taskID": task_id },
+          status_code=200
+        )
+      else:
+        return JSONResponse( content={"error":"Unable to create task"}, status_code=400)
     else:
-        return RedirectResponse(url="/", status_code=302)
+      log.info("Unauthorized user adding task")
+      return RedirectResponse(url="/", status_code=302)
+  else: return RedirectResponse(url="/", status_code=302)
 
 
 @app.delete("/api/v1/tasks/{task_id}")
 async def delete_task(task_id: str) -> JSONResponse:
-    """
-        Delete tasks from the database
-    """
-    try:
-        dbCur.execute("DELETE FROM tasks WHERE id = ?", (task_id,))
-        dbCon.commit()
-        return JSONResponse(
-            content={"message":"Task deleted"},
-            status_code=200
-        )
-    except Exception as e:
-        logger.error(f"Error deleting task: {e}")
-        return JSONResponse(
-            content={"error":"Unable to delete task"},
-            status_code=500
-        )
+  """
+  Delete tasks from the database
+  """
+  try:
+    dbCur.execute("DELETE FROM tasks WHERE id = ?", (task_id,))
+    dbCon.commit()
+    return JSONResponse( content={"message":"Task deleted"}, status_code=200)
+  except Exception as e:
+    log.error(f"Error deleting task: {e}")
+    return JSONResponse( content={"error":"Unable to delete task"}, status_code=500)
 
 
-class TaskUpdate(BaseModel):
-    is_completed: int
+class TaskUpdate(BaseModel): is_completed: int
 
 @app.put("/api/v1/tasks/{task_id}")
 async def update_task(task_id: str, task: TaskUpdate) -> JSONResponse:
   """
-    Updates a task added to database, "is_completed" value.
+  Updates a task added to database, "is_completed" value.
   """
   try:
     dbCur.execute("UPDATE tasks SET is_completed = ? WHERE id = ?", (task.is_completed, task_id))
     dbCon.commit()
-    return JSONResponse(
-      content={"message":"Task updated"},
-      status_code=200
-    )
+    return JSONResponse( content={"message":"Task updated"}, status_code=200)
   except Exception as e:
     print(f"Error updating task: {e}")
-    return JSONResponse(
-      content={"error":"Unable to update task"},
-      status_code=500
-    )
+    return JSONResponse( content={"error":"Unable to update task"}, status_code=500)
 
 
 @app.get("/get-access")
 async def get_access_token(request: Request) -> Response:
   """
-    Starts google oauth flow to grant "My Taskie" access to
-    the users google calendar service.
+  Starts google oauth flow to grant "Blueprint" access to
+  the users google calendar service.
   """
   # Generate the authorization URL
   authorization_url, state = oauth_config.authorization_url(
@@ -194,8 +158,8 @@ async def get_access_token(request: Request) -> Response:
 @app.get("/auth/google/callback")
 async def google_auth_callback(request: Request) -> Response:
   """
-    Handles google callbacks. Get access token, refresh token and user information
-    from google and saves them in a redis database
+  Handles google callbacks. Get access token, refresh token and user information
+  from google and saves them in a redis database
   """
   # Verify state to prevent CSRF attacks
   state = request.query_params.get("state")
@@ -229,7 +193,7 @@ async def google_auth_callback(request: Request) -> Response:
     if refresh_token is None:
       return Response(content="No refresh token", status_code=400)
   except:
-    logger.error("Error getting authorization tokens")
+    log.error("Error getting authorization tokens")
     return Response(content="Error getting authorization tokens", status_code=400)
 
   # Verify the token and get user info
@@ -240,7 +204,7 @@ async def google_auth_callback(request: Request) -> Response:
       CLIENT_ID
     )
   except:
-    logger.error("Error verifing token and getting user info")
+    log.error("Error verifying token and getting user info")
     return Response(content="Internal server error", status_code=500)
 
   # Save session cookie
@@ -259,7 +223,7 @@ async def google_auth_callback(request: Request) -> Response:
     redis_client.set(f"access_token:{user_id}", access_token)
     redis_client.set(f"refresh_token:{user_id}", refresh_token)
   except:
-    logger.error("Error setting session id and saving user info")
+    log.error("Error setting session id and saving user info")
     return Response(content="Internal server error", status_code=500)
 
   response = RedirectResponse(url="/", status_code=302)  # Use 302 instead of default 307
