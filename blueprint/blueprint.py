@@ -244,6 +244,7 @@ def add_calendar_event(
     log.error(f"An unexpected error occurred while adding event: {e}")
     return False
 
+
 # Add task to google calender
 def blueprint(redis_client, dbCur, dbCon, task, user_id) -> tuple[bool, str]:
   prompt = generate_task_prompt(task)

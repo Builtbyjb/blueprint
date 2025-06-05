@@ -1,17 +1,21 @@
 from pydantic.main import BaseModel
 
+
 # Google chat event
 class Space(BaseModel):
   name: str
   type: str
   displayName: str
 
+
 class Sender(BaseModel):
   name: str
   displayName: str
   email: str
 
+
 class Thread(BaseModel): name: str
+
 
 class Message(BaseModel):
   name: str

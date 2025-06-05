@@ -8,6 +8,7 @@ from blueprint.logger import log
 
 MAX_CALLS = 20
 
+
 # Rate limiter
 class RateLimiter(BaseHTTPMiddleware):
   def __init__(self, app):

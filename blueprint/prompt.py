@@ -3,6 +3,7 @@ import pytz
 
 DEFAULT_EVENT_DURATION_MINUTES = 60
 
+
 def generate_task_prompt(task):
   local_tz = pytz.timezone("Canada/Eastern")
 

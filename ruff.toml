@@ -1,0 +1,49 @@
+indent-width = 2
+preview = true
+target-version = "py312"
+line-length = 100
+show-fixes = true
+exclude = []
+
+[lint]
+select = [
+  "F",      # Pyflakes
+  "W6",
+  "E71",
+  "E72",
+  "E112",   # No-indented-block
+  "E113",   # Unexpected-indentation
+  "E203",   # Whitespace-before-punctuation
+  "E272",   # Multiple-spaces-before-keyword
+  "E275",   # Missing-whitespace-after-keyword
+  "E303",   # Too-many-blank-lines
+  "E302",   # 2 blank lines
+  "E304",   # Blank-line-after-decorator
+  "E501",   # Line-too-long
+  "E502",
+  "E702",   # Multiple-statements-on-one-line-semicolon
+  "E703",   # Useless-semicolon
+  "E731",   # Lambda-assignment
+  "W191",   # Tab-indentation
+  "W291",   # Trailing-whitespace
+  "W293",   # Blank-line-with-whitespace
+  "UP039",  # Unnecessary-class-parentheses
+  "C416",   # Unnecessary-comprehension
+  "RET506", # Superfluous-else-raise
+  "RET507", # Superfluous-else-continue
+  "A",      # Builtin-variable-shadowing, builtin-argument-shadowing, builtin-attribute-shadowing
+  "SIM105", # Suppressible-exception
+  "RUF018", # Assignment-in-assert
+  "RET503", # Implicit return type
+  "RET504", # Unnecessary variable assignment before return
+  # "RET505",
+  "ANN201", # Checks function return type
+  "F401",   # Unused imports
+  "F841",   # Variable assigned to but never used
+]
+extend-select = [
+  "TC003", # Type checking
+  "N",     # Pep8 naming convention
+  # "TD003", # Check for TODO comments
+]
+ignore = [] # Ignore errors

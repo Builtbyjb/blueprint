@@ -20,6 +20,7 @@ from datetime import datetime, timedelta, timezone
 from database.sqlite.sqlite import sqlite
 from pydantic import BaseModel
 from typing import Union
+import uvicorn
 
 load_dotenv()
 
@@ -110,6 +111,7 @@ async def delete_task(task_id: str) -> JSONResponse:
 
 
 class TaskUpdate(BaseModel): is_completed: int
+
 
 @app.put("/api/v1/tasks/{task_id}")
 async def update_task(task_id: str, task: TaskUpdate) -> JSONResponse:
@@ -239,3 +241,7 @@ async def google_auth_callback(request: Request) -> Response:
   )
   # Redirect to home page
   return response
+
+
+if __name__ == "__main__":
+  uvicorn.run("main:app", host="127.0.0.1", port=3000, log_level="info")

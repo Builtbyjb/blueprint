@@ -13,6 +13,7 @@ SCOPES = [
   'https://www.googleapis.com/auth/calendar'
 ]
 
+
 def auth_config() -> Flow:
   CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
   CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET")
