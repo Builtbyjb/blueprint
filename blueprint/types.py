@@ -1,4 +1,5 @@
-from pydantic.main import BaseModel
+from pydantic import BaseModel
+from typing import List
 
 
 # Google chat event
@@ -32,4 +33,13 @@ class Chat(BaseModel):
 	message: Message
 
 
-class Task(BaseModel): task: str
+class Tasks(BaseModel):
+   task_id: str
+   task: str
+   is_completed: bool
+
+class Projects(BaseModel): 
+  project_name: str
+  project_id: str
+  tasks: List[Tasks]
+

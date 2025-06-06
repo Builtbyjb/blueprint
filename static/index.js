@@ -59,9 +59,7 @@ document.addEventListener("DOMContentLoaded", () => {
       try {
         const response = await fetch(`/api/v1/tasks/${id}`, {
           method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-          },
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ is_completed: 1 }),
         });
         const data = await response.json();
@@ -102,13 +100,13 @@ function generateTask(task, id) {
   div.classList.add("mb-4");
   div.setAttribute("id", `task-div-${id}`);
   div.innerHTML = `
-        <p id="task-${id}" class="mb-2">${task}</p>
-        <div class="flex gap-4">
-            <a id=${id} class="delete-btn underline text-red-500 text-sm">Delete</a>
-            <a id=${id} class="stage-btn underline text-blue-500 text-sm">Stage</a>
-            <a id=${id} class="complete-btn underline text-green-500 text-sm">Completed</a>
-        </div>
-    `;
+    <p id="task-${id}" class="mb-2">${task}</p>
+    <div class="flex gap-4">
+      <a id=${id} class="delete-btn underline text-red-500 text-sm">Delete</a>
+      <a id=${id} class="stage-btn underline text-blue-500 text-sm">Stage</a>
+      <a id=${id} class="complete-btn underline text-green-500 text-sm">Completed</a>
+    </div>
+  `;
   return div;
 }
 

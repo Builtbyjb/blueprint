@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Request, HTTPException, status
+from fastapi import FastAPI, Request, HTTPException, status, Depends
 from fastapi.responses import RedirectResponse, Response, JSONResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
@@ -11,24 +11,31 @@ from dotenv import load_dotenv
 from blueprint.blueprint import blueprint
 from database.redis.redis import get_redis_client
 from blueprint.utils import generate_crypto_string
+from blueprint.types import Projects, Tasks
 from blueprint.auth import auth_config
 from google.auth.transport import requests as google_requests
 from blueprint.logger import log
-from blueprint.types import Task
 import requests
 from datetime import datetime, timedelta, timezone
-from database.sqlite.sqlite import sqlite
+from database.postgres.db import create_db_and_tables, get_db
+from database.postgres.schema import Project, Task
 from pydantic import BaseModel
-from typing import Union
+from typing import Union, Any
+from contextlib import asynccontextmanager
+from sqlmodel import Session, select
 import uvicorn
 
 load_dotenv()
 
 redis_client: Redis = get_redis_client(os.getenv("REDIS_URL"))
-dbCur, dbCon = sqlite()
 
 # Google oauth2 configuration
 oauth_config = auth_config()
+
+@asynccontextmanager
+async def lifespan(app: FastAPI) -> Any:
+  create_db_and_tables()
+  yield
 
 app = FastAPI()
 app.add_middleware(RateLimiter)
@@ -42,15 +49,20 @@ async def health_check(): return {"ping": "pong"}
 
 
 @app.get("/")
-async def Index(request: Request):
+async def Index(request: Request, db: Session = Depends(get_db)):
   session_id = request.cookies.get("session_id")
   if session_id is not None:
     user_id = redis_client.get(str(session_id)) # Potential failure point
-    tasks= []
     try:
-      # TODO: add a task schema to sqlite so i want have to use index to identify table values
-      t = dbCur.execute("SELECT * FROM tasks WHERE user_id=?", (user_id,))
-      tasks = t.fetchall()
+      # How do i structure the data
+      projects = []
+      p_results = db.exec(select(Project).where(user_id == user_id))
+      for p in p_results:
+        tasks = []
+        t_results = db.exec(select(Task).where(p.id == "project_id"))
+        for t in t_results:
+          tasks.append(Tasks(task_id=t.id, task=t.task, is_completed=t.is_completed))
+        projects.append(Projects(project_id=p.id, project_name=p.name, tasks=tasks))
     except Exception as e:
       log.error(f"Error fetching tasks: {e}")
       return Response(content="Internal server error", status_code=500)
@@ -60,7 +72,7 @@ async def Index(request: Request):
       return templates.TemplateResponse(
         request=request,
         name="index.html",
-        context={ "name":name, "tasks":tasks }
+        context={ "name":name, "projects": projects }
       )
     else:
       return templates.TemplateResponse( request=request, name="auth.html", context={})
@@ -69,7 +81,9 @@ async def Index(request: Request):
 
 
 @app.post("/api/v1/task", response_model=None)
-async def create_task(request: Request, task: Task) -> Union[JSONResponse, RedirectResponse]:
+async def create_task(
+  request: Request, task: str, db: Session = Depends(get_db)
+  ) -> Union[JSONResponse, RedirectResponse]:
   """
   Creates a new task. Adds the task to google calendar or a database,
   depending on if the tasks contains a time reference or not.
@@ -82,7 +96,7 @@ async def create_task(request: Request, task: Task) -> Union[JSONResponse, Redir
       return JSONResponse( content={"error":"Internal server error"}, status_code=500)
     # Authenticate user before added task
     if isAuth(redis_client, str(user_id)):
-      is_added, task_id = blueprint(redis_client, dbCur, dbCon, task.task, user_id)
+      is_added, task_id = blueprint(redis_client, db, task, user_id)
       if is_added:
         return JSONResponse(
           content={ "message":"Task created", "taskID": task_id },
@@ -97,30 +111,27 @@ async def create_task(request: Request, task: Task) -> Union[JSONResponse, Redir
 
 
 @app.delete("/api/v1/tasks/{task_id}")
-async def delete_task(task_id: str) -> JSONResponse:
+async def delete_task(task_id: str, db: Session = Depends(get_db)) -> JSONResponse:
   """
   Delete tasks from the database
   """
   try:
-    dbCur.execute("DELETE FROM tasks WHERE id = ?", (task_id,))
-    dbCon.commit()
+    # dbCur.execute("DELETE FROM tasks WHERE id = ?", (task_id,))
     return JSONResponse( content={"message":"Task deleted"}, status_code=200)
   except Exception as e:
     log.error(f"Error deleting task: {e}")
     return JSONResponse( content={"error":"Unable to delete task"}, status_code=500)
 
 
-class TaskUpdate(BaseModel): is_completed: int
-
-
 @app.put("/api/v1/tasks/{task_id}")
-async def update_task(task_id: str, task: TaskUpdate) -> JSONResponse:
+async def update_task(
+  task_id: str, is_completed: int, db: Session = Depends(get_db)
+  ) -> JSONResponse:
   """
   Updates a task added to database, "is_completed" value.
   """
   try:
-    dbCur.execute("UPDATE tasks SET is_completed = ? WHERE id = ?", (task.is_completed, task_id))
-    dbCon.commit()
+    # dbCur.execute("UPDATE tasks SET is_completed = ? WHERE id = ?", (task.is_completed, task_id))
     return JSONResponse( content={"message":"Task updated"}, status_code=200)
   except Exception as e:
     print(f"Error updating task: {e}")
@@ -171,10 +182,7 @@ async def google_auth_callback(request: Request) -> Response:
   TOKEN_URL = "https://oauth2.googleapis.com/token"
 
   if state is None or state != stored_state:
-    raise HTTPException(
-      status_code=status.HTTP_401_UNAUTHORIZED,
-      detail="Invalid state parameter. Possible CSRF attack."
-    )
+    raise HTTPException( status_code=401, detail="Invalid state parameter. Possible CSRF attack.")
 
   # Exchange the authorization code for tokens
   try:

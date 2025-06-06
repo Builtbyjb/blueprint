@@ -246,7 +246,7 @@ def add_calendar_event(
 
 
 # Add task to google calender
-def blueprint(redis_client, dbCur, dbCon, task, user_id) -> tuple[bool, str]:
+def blueprint(redis_client, db,  task, user_id) -> tuple[bool, str]:
   prompt = generate_task_prompt(task)
   response = gemini_response(prompt)
   sanitized_response = sanitize_gemini_response(response)
@@ -256,12 +256,12 @@ def blueprint(redis_client, dbCur, dbCon, task, user_id) -> tuple[bool, str]:
     # Save task to and sqlite database and return the id
     task_id = generate_crypto_string()
     try:
-      dbCur.execute(
-        "INSERT INTO tasks (id, user_id, task, is_completed) VALUES (?, ?, ?, ?)",
-        (task_id, user_id, task, False)
-      )
-      dbCon.commit()
-      return True, task_id
+      # dbCur.execute(
+      #   "INSERT INTO tasks (id, user_id, task, is_completed) VALUES (?, ?, ?, ?)",
+      #   (task_id, user_id, task, False)
+      # )
+      raise NotImplementedError
+      # return True, task_id
     except Exception as e:
       log.error(f"An unexpected error occurred while saving task to database: {e}")
       return False, ""

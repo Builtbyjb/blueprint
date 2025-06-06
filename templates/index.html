@@ -1,52 +1,47 @@
 {% extends "layout.html" %}
-<!--  -->
 {% block body %}
 <div class="mb-4">
-    <h1 class="mb-4 text-2xl">Hi, {{ name }}</h1>
+  <h1 class="mb-4 text-2xl">Hi, {{ name }}</h1>
 </div>
+<nav>
+  <ul>
+    <li>Projects</li>
+    <li>Todo</li>
+    <li>Integrations</li>
+    <li>Settings</li>
+  </ul>
+</nav>
 <p id="msg" class="my-4"></p>
 <div class="pb-8">
-    <div>
-        <div class="py-6">
-            <form id="task-form" class="space-y-4">
-                <div class="w-[90%]">
-                    <textarea
-                        id="task-input"
-                        placeholder="Enter your task..."
-                        class="px-4 w-full py-3 bg-[#121212] border-2 border-[#333333] focus:outline-none focus:ring-1 focus:ring-primary-700/50 min-h-[100px]"
-                        required
-                    ></textarea>
-                </div>
-                <button type="submit" class="bg-[#C3C2C2] text-neutral-900 font-bold px-8 py-2">Add Task</button>
-            </form>
-            <!-- <p class="text-sm mt-4">
-                Tasks without a time frame will be added to the task list.
-                The tasks can then be staged again at a later date to add a time frame.
-                Which is then added to google calendar.
-            </p> -->
+  <div popover id="task-form-div">
+    <div class="py-6">
+      <form id="task-form" class="space-y-4">
+        <div class="w-[90%]">
+          <textarea id="task-input" placeholder="Enter your task..."
+            class="px-4 w-full py-3 bg-[#121212] border-2 border-[#333333] focus:outline-none focus:ring-1 focus:ring-primary-700/50 min-h-[100px]"
+            required></textarea>
         </div>
+        <button type="submit" class="bg-[#C3C2C2] text-neutral-900 font-bold px-8 py-2">Add Task</button>
+      </form>
     </div>
-    <div>
-        <h2 class="text-2xl mb-4">Your Tasks</h2>
-        <div id="task-list">
-            {% for t in tasks %}
-            <div id="task-div-{{ t[0] }}" class="mb-4">
-                <p
-                    id="task-{{ t[0] }}"
-                    class="{% if t[3] %} line-through {% endif %}"
-                >{{ t[2] }}</p>
-                <div class="flex gap-4">
-                    <a id="{{ t[0] }}" class="delete-btn underline text-red-500 text-sm">Delete</a>
-                    <a id="{{ t[0] }}" class="stage-btn underline text-blue-500 text-sm">Stage</a>
-                    <a id="{{ t[0] }}" class="complete-btn underline text-green-500 text-sm">Completed</a>
-                </div>
-            </div>
-            {% endfor %}
-        </div
+  </div>
+  <div>
+    <h2 class="text-2xl mb-4">Your Tasks</h2>
+    <div id="task-list">
+      {% for t in tasks %}
+      <div id="task-div-{{ t[0] }}" class="mb-4">
+        <p id="task-{{ t[0] }}" class="{% if t[3] %} line-through {% endif %}">{{ t[2] }}</p>
+        <div class="flex gap-4">
+          <a id="{{ t[0] }}" class="delete-btn underline text-red-500 text-sm">Delete</a>
+          <a id="{{ t[0] }}" class="stage-btn underline text-blue-500 text-sm">Stage</a>
+          <a id="{{ t[0] }}" class="complete-btn underline text-green-500 text-sm">Completed</a>
+        </div>
+      </div>
+      {% endfor %}
     </div>
-</div>
-{% endblock %}
-<!--  -->
-{% block script %}
-<script type="module" src="/static/index.js"></script>
-{% endblock %}
+  </div>
+  <button>Add</button>
+  {% endblock %}
+  {% block script %}
+  <script type="module" src="/static/index.js"></script>
+  {% endblock %}
